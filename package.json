@@ -2,6 +2,7 @@
   "name": "batzio",
   "version": "0.1.0",
   "private": true,
+  "license": "AGPL-3.0-only",
   "description": "Batzio \u2013 agent-first Swiss accounting: web, API, Apple, Android and Windows apps",
   "packageManager": "pnpm@12.4.2",
   "type": "module",

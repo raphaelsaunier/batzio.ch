@@ -2,6 +2,7 @@
   "name": "@batzio/local",
   "version": "0.1.0",
   "private": true,
+  "license": "AGPL-3.0-only",
   "description": "Batzio's engine as a single script for the native apps' on-device mode: SQLite files and a folder instead of a server.",
   "type": "module",
   "scripts": {

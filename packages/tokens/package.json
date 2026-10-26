@@ -2,6 +2,7 @@
   "name": "@batzio/tokens",
   "version": "0.1.0",
   "private": true,
+  "license": "AGPL-3.0-only",
   "description": "Batzio design tokens (metallic blue, neumorphic surfaces) and their generated CSS, SwiftUI, Compose and WinUI forms.",
   "type": "module",
   "exports": {

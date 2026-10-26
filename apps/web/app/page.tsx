@@ -1,14 +1,13 @@
-import { ArrowRight, AtSign, BookOpen, Bot, Building2, FileCode2, FolderKanban, IdCard, Inbox, Keyboard, Landmark, Languages, MessageSquareText, Plug, QrCode, Search, ShieldCheck, Smartphone, Truck, WifiOff, Zap } from "lucide-react";
+import { ArrowRight, AtSign, BookOpen, Bot, Building2, FileCode2, FolderKanban, IdCard, Inbox, Keyboard, Landmark, Languages, MessageSquareText, Plug, QrCode, Search, ShieldCheck, Smartphone, Truck, Wallet, WifiOff, Zap } from "lucide-react";
 import Link from "next/link";
-import { Brand } from "@/components/brand";
 import { CoinHero } from "@/components/brand/coin-hero";
-import { LocaleSwitcher } from "@/components/i18n/locale-switcher";
+import { MarketingFooter, MarketingHeader, SectionHeading } from "@/components/marketing/chrome";
 import { NativeApps } from "@/components/marketing/devices";
+import { Pricing } from "@/components/marketing/pricing";
 import { AgentChats, CompatCoverage, CompatDiff, McpConfig, MoveInSteps } from "@/components/marketing/sections";
 import { SpeedDemo } from "@/components/marketing/speed-demo";
 import { Button } from "@/components/ui/button";
 import { getT } from "@/lib/i18n/server";
-import { ExperimentBanner } from "@/components/shell/experiment-banner";
 import { currentUser } from "@/lib/server/session";
 import { N_ } from "@batzio/i18n";
 
@@ -27,63 +26,11 @@ const FEATURES = [
   { icon: Bot, title: N_("Bring your own assistant"), text: N_("Claude and other AI assistants can work in your books too — with exactly the access you choose.") },
 ];
 
-function SectionHeading({ kicker, icon: Icon, title, text, id }: { kicker: string; icon: typeof Zap; title: string; text: string; id: string }) {
-  return (
-    <div className="mx-auto mb-10 max-w-3xl text-center">
-      <span className="sticker">
-        <Icon className="text-primary size-3.5" /> {kicker}
-      </span>
-      <h2 id={id} className="font-display mt-4 text-3xl leading-tight font-bold tracking-tight text-balance sm:text-4xl">
-        {title}
-      </h2>
-      <p className="text-muted-foreground mt-4 text-lg leading-8 text-balance">{text}</p>
-    </div>
-  );
-}
-
 export default async function LandingPage() {
   const [user, t] = await Promise.all([currentUser(), getT()]);
-  const nav: [string, string][] = [
-    ["#fast", t("Speed")],
-    ["#apps", t("Apps")],
-    ["#agents", t("AI agents")],
-    ["#api", t("API")],
-    ["#move-in", t("Move in")],
-  ];
   return (
     <div className="bg-background min-h-svh overflow-x-clip">
-      <ExperimentBanner />
-      <header className="bg-background/80 sticky top-0 z-30 border-b backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
-          <Brand />
-          <nav className="hidden items-center gap-1 lg:flex" aria-label={t("Sections")}>
-            {nav.map(([href, label]) => (
-              <Button key={href} variant="ghost" size="sm" asChild>
-                <a href={href}>{label}</a>
-              </Button>
-            ))}
-          </nav>
-          <div className="flex items-center gap-2">
-            <LocaleSwitcher compact className="hidden sm:inline-flex" />
-            {user ? (
-              <Button asChild>
-                <Link href="/select">
-                  {t("Open Batzio")} <ArrowRight />
-                </Link>
-              </Button>
-            ) : (
-              <>
-                <Button variant="ghost" asChild>
-                  <Link href="/login">{t("Sign in")}</Link>
-                </Button>
-                <Button asChild>
-                  <Link href="/signup">{t("Start free")}</Link>
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+      <MarketingHeader />
 
       <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[44rem] bg-[radial-gradient(ellipse_at_top,oklch(0.66_0.09_238/0.2),transparent_62%)]" />
@@ -265,15 +212,20 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <footer className="border-t">
-        <div className="text-muted-foreground mx-auto flex max-w-6xl flex-col gap-3 px-4 py-8 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <Brand />
-          <LocaleSwitcher compact className="sm:hidden" />
-          <span>
-            © {new Date().getFullYear()} Batzio · {t("Made in Switzerland, with a deep aversion to accounting.")}
-          </span>
+      <section aria-labelledby="pricing" className="bg-hero scroll-mt-20 border-y py-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <SectionHeading
+            id="pricing"
+            icon={Wallet}
+            kicker={t("Pricing")}
+            title={t("Fair prices. Free where it matters.")}
+            text={t("Every plan has every feature — payroll, projects, stock, the AI assistant, the API. You only pay for the people who use it.")}
+          />
+          <Pricing />
         </div>
-      </footer>
+      </section>
+
+      <MarketingFooter />
     </div>
   );
 }

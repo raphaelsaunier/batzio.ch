@@ -2,6 +2,7 @@
   "name": "@batzio/i18n",
   "version": "0.1.0",
   "private": true,
+  "license": "AGPL-3.0-only",
   "description": "EN/DE/FR/IT catalog, glossary and runtime, plus generators for the native apps' string resources.",
   "type": "module",
   "exports": {

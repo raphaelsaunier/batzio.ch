@@ -2,6 +2,7 @@
   "name": "@batzio/web",
   "version": "0.1.0",
   "private": true,
+  "license": "AGPL-3.0-only",
   "description": "Batzio web app (vinext on Cloudflare Workers): UI, REST API, MCP, agent and inbound email.",
   "type": "module",
   "scripts": {

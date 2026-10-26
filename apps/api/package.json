@@ -2,6 +2,7 @@
   "name": "@batzio/api",
   "version": "0.1.0",
   "private": true,
+  "license": "AGPL-3.0-only",
   "description": "Headless Batzio API Worker (REST, MCP, agent, drops, inbound email) for the native apps and integrations.",
   "type": "module",
   "scripts": {

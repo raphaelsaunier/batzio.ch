@@ -4,6 +4,8 @@
 
 Built with **vinext** (Next.js App Router on Vite) for **Cloudflare Workers**, **shadcn/ui**, and **one Cloudflare D1 database per company** — plus native apps for **iPhone, iPad, Mac and Apple Vision Pro** (one SwiftUI app), **Android** (Jetpack Compose) and **Windows** (WinUI 3), all in this monorepo and all drawn from the same definitions, translations and design tokens.
 
+Open source under the [GNU AGPL v3.0](LICENSE): run it on your own server for free, or use the hosted version at [www.batzio.ch](https://www.batzio.ch).
+
 ---
 
 ## Features
@@ -294,3 +296,7 @@ The list, form, detail screen (web and every native app), REST endpoints, OpenAP
 ## Not yet included
 
 Sending documents by email from the app's own screens (the compatibility API's `send` endpoints already work with Email Service) and email replies from Batzi, changes made while offline (the web app is read-only without a connection), eBill, two-factor authentication, plural forms in translations, translated report PDFs (document PDFs follow the customer's language), Swiss salary certificate (Lohnausweis) and ELM transmission, direct ESTV submission, foreign-currency revaluation, and a scheduled trigger for recurring billing and dunning (both are available as one-click actions and API/MCP operations). In the native apps: Batzi and moving in on this device (both need the network), syncing an on-device company to a server, push notifications, home-screen widgets and the A4 sheet editor (documents are edited as forms with live totals and previewed as the real PDF).
+
+## License
+
+Batzio is free software under the [GNU Affero General Public License, version 3](LICENSE) (SPDX: `AGPL-3.0-only`). You may use, study, change and share it, including running it on your own server. If you change it and let other people use your version over a network, the licence asks you to offer them its source code too.

@@ -2,6 +2,7 @@
   "name": "@batzio/server",
   "version": "0.1.0",
   "private": true,
+  "license": "AGPL-3.0-only",
   "description": "Batzio's engine: per-tenant D1 storage, resource registry, REST/OpenAPI, MCP, the Batzi agent, inbound email, PDF and XLSX output.",
   "type": "module",
   "exports": {

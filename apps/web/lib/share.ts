@@ -5,7 +5,7 @@ import { getEnv } from "@batzio/server/env";
 import { getLocale, tFor } from "@/lib/i18n/server";
 
 /** Open-graph images rendered by `pnpm --filter @batzio/web og` into public/og. */
-export type ShareImage = "home" | "demo" | "api";
+export type ShareImage = "home" | "demo" | "api" | "vs";
 
 const OG_LOCALES: Record<Locale, string> = { en: "en_GB", de: "de_CH", fr: "fr_CH", it: "it_CH" };
 
@@ -17,6 +17,10 @@ const COPY: Record<ShareImage, { title: string; description: string }> = {
   demo: {
     title: N_("A year of Swiss books, ready to explore"),
     description: N_("Invoices, bills, payroll and bank statements of a demo agency — one click, nothing to set up."),
+  },
+  vs: {
+    title: N_("Compared with bexio, row by row"),
+    description: N_("From CHF 5.– a month instead of 35.–, open source, works offline and free for non-profits."),
   },
   api: {
     title: N_("One API for all your books"),

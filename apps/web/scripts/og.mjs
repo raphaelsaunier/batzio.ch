@@ -14,7 +14,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { Bot, Code, Plug, Smartphone, Truck, Zap } from "lucide-react";
+import { Bot, Code, HeartHandshake, Plug, Smartphone, Truck, Wallet, WifiOff, Zap } from "lucide-react";
 import { chromium } from "playwright-core";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -106,6 +106,12 @@ function page(kind, locale) {
       <div class="text"><h1>${esc(t("Swiss accounting that keeps up with you"))}</h1>
       <p class="sub">${esc(t("Instant on every device, ready for your AI assistant, compatible with the tools you already use."))}</p></div>
       ${chips([[Zap, t("Instant")], [Smartphone, t("Native apps")], [Bot, t("AI agents")], [Truck, t("Switch in one click")]])}</div>`;
+  } else if (kind === "vs") {
+    body = `<div class="card light"><div class="crosses"></div><div class="glow"></div><img class="coin" src="${COIN}" alt="">
+      ${brand}
+      <div class="text"><h1>${esc(t("Compared with bexio, row by row"))}</h1>
+      <p class="sub">${esc(t("From CHF 5.– a month instead of 35.–, open source, works offline and free for non-profits."))}</p></div>
+      ${chips([[Wallet, "CHF 5.– vs 35.–"], [Code, t("Open source")], [WifiOff, t("Works offline")], [HeartHandshake, t("Free for non-profits")]])}</div>`;
   } else if (kind === "demo") {
     body = `<div class="card light"><div class="crosses"></div><img class="mac" src="${MAC}" alt=""><div class="phone"><img src="${PHONE}" alt=""></div>
       ${brand}
@@ -137,7 +143,7 @@ function page(kind, locale) {
 mkdirSync(out, { recursive: true });
 const browser = await chromium.launch({ channel: "chrome" });
 const tab = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 });
-for (const kind of ["home", "demo", "api"]) {
+for (const kind of ["home", "demo", "api", "vs"]) {
   for (const locale of LOCALES) {
     await tab.setContent(page(kind, locale), { waitUntil: "networkidle" });
     await tab.evaluate(() => document.fonts.ready);
