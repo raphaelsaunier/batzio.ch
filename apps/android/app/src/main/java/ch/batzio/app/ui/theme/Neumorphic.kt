@@ -25,7 +25,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.toArgb
@@ -38,15 +38,17 @@ import androidx.compose.ui.unit.dp
 
 private fun DrawScope.softShadows(layers: List<BzShadowLayer>, t: BzScheme, radius: Float, inset: Boolean) {
     drawIntoCanvas { canvas ->
+        // Blurred shadows need the platform canvas (mask filters).
+        val native = canvas.nativeCanvas
         for (l in layers) {
-            val paint = Paint()
-            val frame = paint.asFrameworkPaint()
-            frame.color = l.color(t).toArgb()
-            frame.maskFilter = BlurMaskFilter(l.blur.dp.toPx() / 2f + 0.5f, if (inset) BlurMaskFilter.Blur.INNER else BlurMaskFilter.Blur.NORMAL)
-            canvas.save()
-            canvas.translate(l.x.dp.toPx(), l.y.dp.toPx())
-            canvas.drawRoundRect(0f, 0f, size.width, size.height, radius, radius, paint)
-            canvas.restore()
+            val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                color = l.color(t).toArgb()
+                maskFilter = BlurMaskFilter(l.blur.dp.toPx() / 2f + 0.5f, if (inset) BlurMaskFilter.Blur.INNER else BlurMaskFilter.Blur.NORMAL)
+            }
+            native.save()
+            native.translate(l.x.dp.toPx(), l.y.dp.toPx())
+            native.drawRoundRect(0f, 0f, size.width, size.height, radius, radius, paint)
+            native.restore()
         }
     }
 }

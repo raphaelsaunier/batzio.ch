@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { unzipSync, strFromU8 } from "fflate";
+import { strFromU8, unzipSync, unzlibSync } from "fflate";
 import { PDFDocument } from "pdf-lib";
 import { beforeAll, describe, expect, it } from "vitest";
 import { buildOpenApi } from "../src/api/openapi";
@@ -13,6 +13,7 @@ import { renderDocumentPdf, renderReminderPdf, type ReminderRow } from "../src/p
 import { renderPayslipPdf, renderReportPdf, renderVatPdf } from "../src/pdf/reports";
 import type { DocumentRow } from "../src/sales";
 import { seedDemo } from "../src/seed";
+import { saveSettings } from "../src/settings";
 import { buildXlsx } from "../src/xlsx";
 import { makeCtx } from "./helpers/tenant";
 
@@ -36,6 +37,24 @@ async function pageCount(bytes: Uint8Array) {
   return (await PDFDocument.load(bytes)).getPageCount();
 }
 
+/** The text a PDF draws, line by line (standard fonts write it as WinAnsi hex strings). */
+function pdfText(bytes: Uint8Array): string[] {
+  const raw = Buffer.from(bytes).toString("latin1");
+  const lines: string[] = [];
+  for (const m of raw.matchAll(/stream\r?\n/g)) {
+    const start = m.index! + m[0].length;
+    const end = raw.indexOf("endstream", start);
+    let content: string;
+    try {
+      content = strFromU8(unzlibSync(bytes.subarray(start, end)), true);
+    } catch {
+      continue;
+    }
+    for (const t of content.matchAll(/<([0-9A-Fa-f]*)> Tj/g)) lines.push(Buffer.from(t[1], "hex").toString("latin1"));
+  }
+  return lines;
+}
+
 describe("PDF output", () => {
   it("renders an open invoice with a QR-bill", async () => {
     const res = getResource("invoices")!;
@@ -45,6 +64,22 @@ describe("PDF output", () => {
     expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe("%PDF-");
     expect(await pageCount(bytes)).toBeGreaterThanOrEqual(1);
     save("invoice.pdf", bytes);
+  });
+
+  it("prints the company's own page footer (two lines, cut to fit) or company, UID and the document's IBAN", async () => {
+    const quote = (await getRecord(ctx, getResource("quotes")!, 1)) as unknown as DocumentRow;
+    await saveSettings(ctx, "company", { document_footer: `Muster AG · Handelsregister Bern\nBank ${"x".repeat(300)}\nThird line` });
+    const own = pdfText(await renderDocumentPdf(ctx, quote));
+    expect(own).toContain("Muster AG \xb7 Handelsregister Bern");
+    const cut = own.find((l) => l.startsWith("Bank x"))!;
+    expect(cut.endsWith("\x85")).toBe(true); // “…” in WinAnsi
+    expect(cut.length).toBeLessThan(250);
+    expect(own.some((l) => l.includes("Third line"))).toBe(false);
+
+    await saveSettings(ctx, "company", { document_footer: "" });
+    const second = await ctx.db.value<number>("INSERT INTO bank_accounts (name, iban, currency_code) VALUES ('Second', 'CH5604835012345678009', 'CHF') RETURNING id");
+    const auto = pdfText(await renderDocumentPdf(ctx, { ...quote, bank_account_id: second }));
+    expect(auto.find((l) => l.includes("UID"))).toMatch(/\|   IBAN CH56 0483 5012 3456 7800 9$/);
   });
 
   it("renders a multi-section quote, a reminder and a payslip", async () => {

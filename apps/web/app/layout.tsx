@@ -8,6 +8,7 @@ import { I18nProvider } from "@batzio/i18n/react";
 import { CATALOG_VERSION } from "@batzio/i18n/server";
 import { getLocale, messagesFor } from "@/lib/i18n/server";
 import { isClientNavigation } from "@/lib/navigation";
+import { shareMetadata } from "@/lib/share";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -15,11 +16,9 @@ const display = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-disp
 // The wordmark: Roman capitals, like the lettering on the coin.
 const brand = Cinzel({ subsets: ["latin"], variable: "--font-brand", weight: ["600", "700"] });
 
-export const metadata: Metadata = {
-  title: { default: "Batzio", template: "%s · Batzio" },
-  description: "Swiss business software for people who would rather do anything than accounting.",
-  icons: { icon: "/favicon.svg" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: { default: "Batzio", template: "%s · Batzio" }, icons: { icon: "/favicon.svg" }, ...(await shareMetadata("home")) };
+}
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const locale = await getLocale();

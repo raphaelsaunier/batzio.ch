@@ -42,9 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import ch.batzio.app.AppModel
 import ch.batzio.app.ListRoute
@@ -53,6 +51,7 @@ import ch.batzio.app.core.ApiKeyInfo
 import ch.batzio.app.core.CreatedApiKey
 import ch.batzio.app.core.InviteResult
 import ch.batzio.app.core.L
+import ch.batzio.app.ui.components.rememberCopy
 import ch.batzio.app.core.MessageResult
 import ch.batzio.app.core.NumberFormat
 import ch.batzio.app.core.SettingsScreen
@@ -82,7 +81,7 @@ private fun SettingsRow(title: String, subtitle: String? = null, onClick: () -> 
 
 @Composable
 fun SettingsScreenView(app: AppModel) {
-    val clipboard = LocalClipboardManager.current
+    val copy = rememberCopy()
     val scope = rememberCoroutineScope()
     Loader(app, "settings", { it.get<SettingsScreen>("/app/settings") }) { s, refresh ->
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -99,7 +98,20 @@ fun SettingsScreenView(app: AppModel) {
                     Switch(app.isAccountant, { app.setMode(if (it) "accountant" else "simple") })
                 }
                 if (app.prefs.companies.size > 1) Choice(L("Company"), app.prefs.companies.map { it.slug to it.name }, app.tenantSlug) { slug -> app.prefs.companies.firstOrNull { it.slug == slug }?.let(app::choose) }
-                TextButton({ app.signOut() }) { Text(L("Sign out"), color = LocalBz.current.destructive) }
+                if (app.isOnDevice) {
+                    var confirming by remember { mutableStateOf(false) }
+                    TextButton({ app.signOut() }) { Text(L("Sign out")) }
+                    TextButton({ confirming = true }) { Text(L("Delete everything on this device…"), color = LocalBz.current.destructive) }
+                    if (confirming) AlertDialog(
+                        onDismissRequest = { confirming = false },
+                        title = { Text(L("Delete everything on this device…")) },
+                        text = { Text(L("This deletes every company, document and file stored on this device. It cannot be undone.")) },
+                        confirmButton = { TextButton({ confirming = false; app.deleteEverythingOnDevice() }) { Text(L("Delete everything"), color = LocalBz.current.destructive) } },
+                        dismissButton = { TextButton({ confirming = false }) { Text(L("Cancel")) } },
+                    )
+                } else {
+                    TextButton({ app.signOut() }) { Text(L("Sign out"), color = LocalBz.current.destructive) }
+                }
             }
             Column(Modifier.fillMaxWidth().neuCard(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 SectionTitle(L("Batzi & inbox"))
@@ -107,7 +119,7 @@ fun SettingsScreenView(app: AppModel) {
                 s.inbox?.let { inbox ->
                     Text(inbox)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        NeuButton(L("Copy"), { clipboard.setText(AnnotatedString(inbox)); app.toast(L("Copied")) }, compact = true)
+                        NeuButton(L("Copy"), { copy(inbox); app.toast(L("Copied")) }, compact = true)
                         if (s.canWrite) NeuButton(L("Get a new address"), {
                             scope.launch {
                                 try { app.api.send<JsonElement>("POST", "/app/inbox-address"); app.toast(L("New address ready. The old one no longer works.")); refresh(); app.reload() } catch (e: Exception) { app.report(e) }
@@ -115,7 +127,11 @@ fun SettingsScreenView(app: AppModel) {
                         }, compact = true)
                     }
                 }
-                Text("Batzi: " + if (s.agent) L("Ready") else L("Needs an Anthropic API key on the server"), color = LocalBz.current.mutedForeground)
+                Text("Batzi: " + when {
+                    s.agent -> L("Ready")
+                    app.isOnDevice -> L("Needs an internet connection")
+                    else -> L("Needs an Anthropic API key on the server")
+                }, color = LocalBz.current.mutedForeground)
             }
             Column(Modifier.fillMaxWidth().neuCard()) {
                 SectionTitle(L("Company"))
@@ -123,8 +139,11 @@ fun SettingsScreenView(app: AppModel) {
                 SettingsRow(L("Accounting")) { app.push(SettingsPage("accounting")) }
                 SettingsRow(L("Document texts")) { app.push(SettingsPage("texts")) }
                 SettingsRow(L("Number formats")) { app.push(SettingsPage("numbering")) }
-                if (app.bootstrap?.can("users") == true) SettingsRow(L("Users & roles")) { app.push(SettingsPage("team")) }
-                SettingsRow(L("API & MCP")) { app.push(SettingsPage("api")) }
+                // On this device there is nobody to invite and nothing to connect to.
+                if (!app.isOnDevice) {
+                    if (app.bootstrap?.can("users") == true) SettingsRow(L("Users & roles")) { app.push(SettingsPage("team")) }
+                    SettingsRow(L("API & MCP")) { app.push(SettingsPage("api")) }
+                }
             }
             Column(Modifier.fillMaxWidth().neuCard()) {
                 SectionTitle(L("Master data"))
@@ -133,7 +152,10 @@ fun SettingsScreenView(app: AppModel) {
                 }
                 if (app.bootstrap?.resource("audit_log") != null) SettingsRow(L("Audit log")) { app.push(ListRoute("audit_log")) }
             }
-            Text("${L("Server")}: ${app.prefs.serverUrl}", style = MaterialTheme.typography.bodySmall, color = LocalBz.current.mutedForeground)
+            Text(
+                if (app.isOnDevice) "${L("On this device")}: ${app.deviceFolder.path}" else "${L("Server")}: ${app.prefs.serverUrl}",
+                style = MaterialTheme.typography.bodySmall, color = LocalBz.current.mutedForeground,
+            )
             Spacer(Modifier.height(40.dp))
         }
     }
@@ -240,7 +262,7 @@ private fun roleLabel(role: String) = when (role) {
 @Composable
 private fun TeamPage(app: AppModel) {
     val scope = rememberCoroutineScope()
-    val clipboard = LocalClipboardManager.current
+    val copy = rememberCopy()
     var email by remember { mutableStateOf("") }
     var role by remember { mutableStateOf("member") }
     var link by remember { mutableStateOf<String?>(null) }
@@ -288,7 +310,7 @@ private fun TeamPage(app: AppModel) {
                 link?.let { l ->
                     Text(L("Share this link with your colleague"), style = MaterialTheme.typography.bodySmall)
                     Text(l)
-                    NeuButton(L("Copy"), { clipboard.setText(AnnotatedString(l)); app.toast(L("Copied")) }, compact = true)
+                    NeuButton(L("Copy"), { copy(l); app.toast(L("Copied")) }, compact = true)
                 }
             }
         }
@@ -298,7 +320,7 @@ private fun TeamPage(app: AppModel) {
 @Composable
 private fun ApiKeysPage(app: AppModel) {
     val scope = rememberCoroutineScope()
-    val clipboard = LocalClipboardManager.current
+    val copy = rememberCopy()
     var name by remember { mutableStateOf("") }
     var write by remember { mutableStateOf(false) }
     var created by remember { mutableStateOf<String?>(null) }
@@ -332,7 +354,7 @@ private fun ApiKeysPage(app: AppModel) {
                 created?.let { key ->
                     Text(L("API key created. Copy it now — it will not be shown again."), color = LocalBz.current.warning)
                     Text(key)
-                    NeuButton(L("Copy"), { clipboard.setText(AnnotatedString(key)); app.toast(L("Copied")) }, compact = true)
+                    NeuButton(L("Copy"), { copy(key); app.toast(L("Copied")) }, compact = true)
                 }
             }
         }

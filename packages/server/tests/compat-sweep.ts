@@ -115,6 +115,8 @@ export async function sweep(ctx: Ctx, spec: Json): Promise<SweepResult[]> {
   const entryFile = await storeFile(ctx, { name: "line.pdf", type: "application/pdf", bytes: new TextEncoder().encode("%PDF-1.4").buffer as ArrayBuffer }, { type: "journal_lines", id: manual.entries[0].id });
   const entryFile2 = await storeFile(ctx, { name: "entry.pdf", type: "application/pdf", bytes: new TextEncoder().encode("%PDF-1.4").buffer as ArrayBuffer }, { type: "journal_entries", id: manual.id });
   const file = await storeFile(ctx, { name: "receipt.pdf", type: "application/pdf", bytes: new TextEncoder().encode("%PDF-1.4").buffer as ArrayBuffer }, { type: "documents", id: draftInvoice });
+  // Receipts of booked records are kept for ten years, so the deletion gets a loose file of its own.
+  const spareFile = await storeFile(ctx, { name: "spare.pdf", type: "application/pdf", bytes: new TextEncoder().encode("%PDF-1.4 spare").buffer as ArrayBuffer });
 
   const bill = (pay: boolean) =>
     ok("POST", "/4.0/purchase/bills", {
@@ -260,6 +262,7 @@ export async function sweep(ctx: Ctx, spec: Json): Promise<SweepResult[]> {
     "POST /2.0/kb_order/{}/repetition": { order_id: openOrder },
     "DELETE /2.0/kb_order/{}/repetition": { order_id: openOrder },
     "GET /3.0/files/{}/usage": { file_id: file.id },
+    "DELETE /3.0/files/{}": { file_id: spareFile.id },
     "GET /3.0/accounting/manual_entries/{}/entries/{}/files/{}": { file_id: entryFile.id },
     "DELETE /3.0/accounting/manual_entries/{}/entries/{}/files/{}": { file_id: entryFile.id },
     "GET /3.0/accounting/manual_entries/{}/files/{}": { file_id: entryFile2.id },

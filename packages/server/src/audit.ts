@@ -8,6 +8,10 @@ export interface AuditInput {
   resourceId?: string | number | null;
   summary?: string;
   changes?: Record<string, { from: unknown; to: unknown }> | Record<string, unknown> | null;
+  /** Extra provenance for this entry, on top of the actor's. */
+  context?: Record<string, unknown>;
+  /** The entry this one undoes. */
+  rollbackOf?: number;
 }
 
 export interface AuditRow {
@@ -25,6 +29,9 @@ export interface AuditRow {
   ip: string | null;
   user_agent: string | null;
   hash: string | null;
+  context: string | null;
+  rollback_of: number | null;
+  hash_version: number;
 }
 
 const IGNORED = new Set(["updated_at", "updated_by", "created_at", "created_by"]);
@@ -51,9 +58,10 @@ export function auditStatement(ctx: Ctx, input: AuditInput & { resourceIdSql?: s
   const idSql = input.resourceIdSql ? `CAST((${input.resourceIdSql}) AS TEXT)` : "?";
   const idParams =
     input.resourceIdSql ? [] : [input.resourceId === null || input.resourceId === undefined ? null : String(input.resourceId)];
+  const context = { ...ctx.actor.context, ...input.context };
   return {
-    sql: `INSERT INTO audit_log (actor_type, actor_id, actor_name, source, action, resource, resource_id, summary, changes, ip, user_agent)
-          VALUES (?, ?, ?, ?, ?, ?, ${idSql}, ?, ?, ?, ?)`,
+    sql: `INSERT INTO audit_log (actor_type, actor_id, actor_name, source, action, resource, resource_id, summary, changes, ip, user_agent, context, rollback_of, hash_version)
+          VALUES (?, ?, ?, ?, ?, ?, ${idSql}, ?, ?, ?, ?, ?, ?, 2)`,
     params: [
       ctx.actor.type,
       ctx.actor.id,
@@ -66,6 +74,8 @@ export function auditStatement(ctx: Ctx, input: AuditInput & { resourceIdSql?: s
       input.changes && Object.keys(input.changes).length ? JSON.stringify(input.changes) : null,
       ctx.actor.ip ?? null,
       ctx.actor.userAgent?.slice(0, 300) ?? null,
+      Object.keys(context).length ? JSON.stringify(context) : null,
+      input.rollbackOf ?? null,
     ],
   };
 }
@@ -76,20 +86,14 @@ export async function audit(ctx: Ctx, input: AuditInput): Promise<void> {
   await sealAuditLog(ctx);
 }
 
+/**
+ * What a row's hash covers. Version 2 adds provenance and the undone entry. The IP
+ * address and user agent stay outside the chain, so they can be erased once they
+ * are no longer needed without breaking it.
+ */
 function canonical(row: AuditRow): string {
-  return JSON.stringify([
-    row.id,
-    row.at,
-    row.actor_type,
-    row.actor_id,
-    row.actor_name,
-    row.source,
-    row.action,
-    row.resource,
-    row.resource_id,
-    row.summary,
-    row.changes,
-  ]);
+  const base = [row.id, row.at, row.actor_type, row.actor_id, row.actor_name, row.source, row.action, row.resource, row.resource_id, row.summary, row.changes];
+  return JSON.stringify((row.hash_version ?? 1) >= 2 ? [...base, row.context ?? null, row.rollback_of ?? null] : base);
 }
 
 const GENESIS = "0".repeat(64);

@@ -32,6 +32,8 @@
   --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
+  --color-field: var(--field);
+  --color-field-readonly: var(--field-readonly);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
   --color-success: var(--success);
@@ -317,6 +319,35 @@
   .coin-tagline-strike,
   .coin-tilt {
     transition: none;
+  }
+}
+
+/* --------------------------------------------------------------- fields */
+/*
+ * Form fields stay flat (neumorphism is for pages, cards and buttons): a shade
+ * lighter than their surroundings while editable, sunk back with a darker fill
+ * and no outline when read-only. Squircle corners where corner-shape works;
+ * elsewhere the same radius is a pill at the default height and a soft corner
+ * on textareas.
+ */
+@layer components {
+  .field {
+    border-color: var(--input);
+    border-radius: var(--radius-field);
+    background-color: var(--field);
+    box-shadow: none;
+  }
+  @supports (corner-shape: squircle) {
+    .field {
+      corner-shape: squircle;
+    }
+  }
+  .field:is(:disabled, [readonly], [aria-readonly="true"], [data-disabled]),
+  .field:has(> :disabled, > [readonly]) {
+    border-color: transparent;
+    background-color: var(--field-readonly);
+    color: color-mix(in oklab, var(--foreground) 82%, transparent);
+    opacity: 1;
   }
 }
 

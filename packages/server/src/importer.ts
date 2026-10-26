@@ -1,6 +1,6 @@
 import { today } from "@batzio/core/format";
 import { createRecord, deleteRecord, getRecord } from "./crud";
-import { assertCan, type Ctx } from "./ctx";
+import { assertCan, withProvenance, type Ctx } from "./ctx";
 import { AppError, toAppError } from "./errors";
 import { DEFAULT_SEQUENCES } from "./numbering";
 import { bookBill, bookExpense, payBill } from "./purchases";
@@ -206,7 +206,9 @@ export async function importStep(ctx: Ctx, source: ImportSource, opts: { budgetM
   if (!source.token.trim()) throw new AppError("validation", "Paste the access token from your previous software.");
   let progress = opts.restart ? null : await loadProgress(ctx);
   if (!progress || progress.phase === "done") progress = fresh();
-  const run: Run = { ctx, api: new Source(source), map: new IdMap(ctx), progress, deadline: Date.now() + (opts.budgetMs ?? 8_000) };
+  // Everything this import creates says where it came from.
+  const importCtx = withProvenance(ctx, { import: new URL(source.baseUrl).host });
+  const run: Run = { ctx: importCtx, api: new Source(source), map: new IdMap(importCtx), progress, deadline: Date.now() + (opts.budgetMs ?? 8_000) };
 
   while (run.progress.phase !== "done" && timeLeft(run)) {
     const phase = run.progress.phase;

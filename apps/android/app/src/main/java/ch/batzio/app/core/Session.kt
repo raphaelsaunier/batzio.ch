@@ -34,6 +34,13 @@ class SessionStore(context: Context, private val defaultServer: String) {
 
     fun save(p: Preferences) = prefs.edit().putString("prefs", BzJson.encodeToString(Preferences.serializer(), p)).apply()
 
+    /** Unlocks the on-device account. It only guards data that is already in the app's private storage, so it is kept as is. */
+    var devicePassword: String?
+        get() = prefs.getString("device-password", null)
+        set(value) {
+            if (value == null) prefs.edit().remove("device-password").apply() else prefs.edit().putString("device-password", value).apply()
+        }
+
     var token: String?
         get() = prefs.getString("token", null)?.let { runCatching { decrypt(it) }.getOrNull() }
         set(value) {

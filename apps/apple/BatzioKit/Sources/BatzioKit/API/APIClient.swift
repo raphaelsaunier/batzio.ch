@@ -6,6 +6,13 @@ public struct APIError: Error, LocalizedError, Sendable {
     public let message: String
     public let fields: [String: String]?
 
+    public init(status: Int, code: String, message: String, fields: [String: String]?) {
+        self.status = status
+        self.code = code
+        self.message = message
+        self.fields = fields
+    }
+
     public var errorDescription: String? { message }
     public var isUnauthorized: Bool { status == 401 }
 
@@ -32,6 +39,18 @@ public struct UploadFile: Sendable {
     }
 }
 
+/// Carries requests to Batzio: a server over the network (`URLSession`) or the
+/// engine running on this device (``LocalEngine``).
+public protocol HTTPTransport: Sendable {
+    func send(_ request: URLRequest) async throws -> (Data, URLResponse)
+}
+
+extension URLSession: HTTPTransport {
+    public func send(_ request: URLRequest) async throws -> (Data, URLResponse) {
+        try await data(for: request)
+    }
+}
+
 /// Talks to a Batzio server: `Authorization: Bearer <session>`, `X-Tenant` for
 /// the chosen company and `Accept-Language` so every text comes back translated.
 public struct APIClient: Sendable {
@@ -40,15 +59,15 @@ public struct APIClient: Sendable {
     public var tenant: String?
     public var locale: String
     public var mode: String
-    let session: URLSession
+    let transport: any HTTPTransport
 
-    public init(baseURL: URL, token: String? = nil, tenant: String? = nil, locale: String = "en", mode: String = "simple", session: URLSession = .shared) {
+    public init(baseURL: URL, token: String? = nil, tenant: String? = nil, locale: String = "en", mode: String = "simple", transport: any HTTPTransport = URLSession.shared) {
         self.baseURL = baseURL
         self.token = token
         self.tenant = tenant
         self.locale = locale
         self.mode = mode
-        self.session = session
+        self.transport = transport
     }
 
     public static let decoder = JSONDecoder()
@@ -69,11 +88,32 @@ public struct APIClient: Sendable {
         return components.url!
     }
 
+    /// "Batzio-iOS/0.1.0 (Version 26.0 …)": the audit log shows which app made a change.
+    public static let userAgent: String = {
+        #if os(macOS)
+        let platform = "macOS"
+        #elseif os(visionOS)
+        let platform = "visionOS"
+        #else
+        var size = 0
+        sysctlbyname("hw.machine", nil, &size, nil, 0)
+        var machine = [CChar](repeating: 0, count: max(size, 1))
+        sysctlbyname("hw.machine", &machine, &size, nil, 0)
+        let model = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"] ?? String(cString: machine)
+        let platform = model.hasPrefix("iPad") ? "iPadOS" : "iOS"
+        #endif
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
+        return "Batzio-\(platform)/\(version) (\(ProcessInfo.processInfo.operatingSystemVersionString))"
+    }()
+
     public func request(_ method: String, _ path: String, query: [String: String?] = [:]) -> URLRequest {
         var r = URLRequest(url: url(path, query: query))
         r.httpMethod = method
         r.setValue("application/json", forHTTPHeaderField: "Accept")
         r.setValue(locale, forHTTPHeaderField: "Accept-Language")
+        r.setValue(Self.userAgent, forHTTPHeaderField: "User-Agent")
+        // A write sent twice (a retry after a dropped connection) is answered once.
+        if method != "GET" { r.setValue(UUID().uuidString, forHTTPHeaderField: "Idempotency-Key") }
         if let token { r.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
         if let tenant { r.setValue(tenant, forHTTPHeaderField: "X-Tenant") }
         r.timeoutInterval = 60
@@ -84,7 +124,15 @@ public struct APIClient: Sendable {
         let data: Data
         let response: URLResponse
         do {
-            (data, response) = try await session.data(for: request)
+            do {
+                (data, response) = try await transport.send(request)
+            } catch let error as URLError where request.value(forHTTPHeaderField: "Idempotency-Key") != nil && Self.retryable.contains(error.code) {
+                // Safe to send again: the same key makes the server answer the first attempt.
+                try await Task.sleep(for: .seconds(1))
+                (data, response) = try await transport.send(request)
+            }
+        } catch let error as SQLiteConnection.Failure {
+            throw APIError(status: 500, code: "local", message: error.description, fields: nil)
         } catch {
             throw APIError.transport(error)
         }
@@ -97,6 +145,8 @@ public struct APIClient: Sendable {
         }
         return (data, http)
     }
+
+    static let retryable: Set<URLError.Code> = [.timedOut, .networkConnectionLost, .notConnectedToInternet, .cannotConnectToHost]
 
     func decode<T: Decodable>(_ data: Data) throws -> T {
         do {
@@ -130,11 +180,18 @@ public struct APIClient: Sendable {
         var r = request("GET", path.hasPrefix("/api/") ? path : "/api/v1" + path, query: query)
         r.setValue("*/*", forHTTPHeaderField: "Accept")
         let (data, http) = try await perform(r)
-        let disposition = http.value(forHTTPHeaderField: "Content-Disposition") ?? ""
-        let name = disposition.range(of: #"filename="?([^";]+)"?"#, options: .regularExpression).map {
-            String(disposition[$0]).replacingOccurrences(of: "filename=", with: "").replacingOccurrences(of: "\"", with: "")
-        } ?? (path.split(separator: "/").last.map(String.init) ?? "download")
+        let name = Self.filename(fromDisposition: http.value(forHTTPHeaderField: "Content-Disposition") ?? "") ?? (path.split(separator: "/").last.map(String.init) ?? "download")
         return (data, name, http.mimeType ?? "application/octet-stream")
+    }
+
+    /// The file name of a `Content-Disposition` header, preferring the exact UTF-8 one (`filename*=`).
+    public static func filename(fromDisposition header: String) -> String? {
+        if let range = header.range(of: #"filename\*=UTF-8''([^;]+)"#, options: [.regularExpression, .caseInsensitive]) {
+            let value = header[range].split(separator: "'", maxSplits: 2).last.map(String.init) ?? ""
+            if let decoded = value.removingPercentEncoding, !decoded.isEmpty { return decoded }
+        }
+        guard let range = header.range(of: #"filename="?([^";]+)"?"#, options: .regularExpression) else { return nil }
+        return String(header[range]).replacingOccurrences(of: "filename=", with: "").replacingOccurrences(of: "\"", with: "")
     }
 
     /// Multipart upload (`/api/drop`, `/api/v1/files/upload`).

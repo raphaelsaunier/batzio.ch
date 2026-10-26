@@ -1,12 +1,13 @@
 import { z } from "zod";
 import { calculateDocument, type CalcPosition, type VatMode } from "@batzio/core/calc/documents";
 import { ROLE_PERMISSIONS, isRole, type Area, type Level } from "@batzio/core/permissions";
-import { renderMsg, type Locale, type Msg, type TFunction } from "@batzio/i18n";
+import { msg, renderMsg, type Locale, type Msg, type TFunction } from "@batzio/i18n";
 import { explain, GLOSSARY } from "@batzio/i18n/glossary";
 import { tFor } from "@batzio/i18n/server";
 import type { Lang } from "@batzio/core/swiss/chart-of-accounts";
 import { inviteToCompany, changeMemberRole, issueApiKey, removeCompanyMember, renewInboxAddress, revokeCompanyApiKey, saveSequence, saveSettingsGroup, settingsForms, SETTINGS_GROUPS, type SettingsGroup } from "../admin";
-import type { AuditRow } from "../audit";
+import { historyEntry, recordHistory, type HistoryEntry } from "../history";
+import { scanDuplicates } from "../duplicates";
 import {
   acceptInvitation,
   authenticate,
@@ -23,7 +24,7 @@ import {
   type UserRow,
 } from "../control";
 import { availableActions, findRecord, listParamsFrom, listRecords, recordTitle, refLabels, resolveDefault, sumColumns, toApi } from "../crud";
-import { canCtx, type Ctx } from "../ctx";
+import { canCtx, withProvenance, type Ctx } from "../ctx";
 import { contactSnapshot, newDocumentDefaults } from "../document-defaults";
 import { ensureInboxToken, inboxAddress } from "../email/inbound";
 import { getEnv } from "../env";
@@ -389,7 +390,7 @@ export const appOperations: Operation[] = [
     run: async (ctx, { request, body }) => {
       const { runQuick } = await import("../agent/quick");
       const b = body as { text: string; actionId: string };
-      const outcome = await runQuick(ctx, b.text, b.actionId);
+      const outcome = await runQuick(withProvenance(ctx, { sentence: b.text.slice(0, 200) }), b.text, b.actionId);
       return { ...outcome, message: renderMsg(tFor(localeOf(request)), outcome.message) };
     },
   },
@@ -508,9 +509,7 @@ export const appOperations: Operation[] = [
           };
         }),
       );
-      const history = canCtx(ctx, "audit", "read")
-        ? await ctx.db.all<AuditRow>("SELECT id, at, actor_name, source, action, summary FROM audit_log WHERE resource = ? AND resource_id = ? ORDER BY id DESC LIMIT 30", res.name, String(id))
-        : [];
+      const history = canCtx(ctx, "audit", "read") ? (await recordHistory(ctx, t, res.name, id, 30)).map(appHistoryEntry) : [];
       const files = await ctx.db.all<{ id: number; name: string; mime_type: string | null; size: number }>(
         "SELECT id, name, mime_type, size FROM files WHERE ref_type = ? AND ref_id = ? ORDER BY id DESC",
         res.name,
@@ -533,6 +532,43 @@ export const appOperations: Operation[] = [
         files,
         history,
       };
+    },
+  },
+  {
+    id: "appHistory",
+    method: "GET",
+    path: "/app/history/{resource}/{id}",
+    tag: "App",
+    summary: "A record's history in words: who changed what (person or software), from where, before and after, and whether it can be undone",
+    area: "audit",
+    rawUnits: true,
+    run: async (ctx, { params, request, query }) => {
+      const res = readable(ctx, params.resource);
+      return (await recordHistory(ctx, tFor(localeOf(request, query)), res.name, Number(params.id), 100)).map(appHistoryEntry);
+    },
+  },
+  {
+    id: "appAuditEntry",
+    method: "GET",
+    path: "/app/audit/{id}",
+    tag: "App",
+    summary: "One audit log entry in words, with provenance and the before/after of every field",
+    area: "audit",
+    rawUnits: true,
+    run: async (ctx, { params, request, query }) => appHistoryEntry(await historyEntry(ctx, tFor(localeOf(request, query)), Number(params.id))),
+  },
+  {
+    id: "appScanDuplicates",
+    method: "POST",
+    path: "/app/duplicates/scan",
+    tag: "App",
+    summary: "Looks through every contact, supplier bill, expense and file for copies of earlier ones",
+    area: "audit",
+    level: "write",
+    rawUnits: true,
+    run: async (ctx, { request }) => {
+      const flagged = await scanDuplicates(ctx);
+      return { flagged, message: renderMsg(tFor(localeOf(request)), msg("{n} possible duplicates found.", { n: flagged })) };
     },
   },
   {
@@ -844,4 +880,9 @@ function readable(ctx: Ctx, name: string): ResourceDef {
   const res = getResource(name);
   if (!res || !canCtx(ctx, res.area, "read")) throw new AppError("not_found", "Unknown resource {name}.", undefined, { name });
   return res;
+}
+
+/** History entries for the apps: the described entry plus the flat fields older app versions read. */
+function appHistoryEntry(e: HistoryEntry) {
+  return { ...e, actor_name: e.actor.name, source: e.actor.source, summary: e.summary ?? e.title };
 }

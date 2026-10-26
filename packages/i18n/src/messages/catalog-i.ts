@@ -109,4 +109,16 @@ export const ROWS: CatalogRow[] = [
   ["Open the demo company: a Swiss agency with a year of invoices, bills, payroll and bank statements.", "Öffne die Demofirma: eine Schweizer Agentur mit einem Jahr Rechnungen, Lieferantenrechnungen, Löhnen und Kontoauszügen.", "Ouvrez l’entreprise de démo : une agence suisse avec une année de factures, factures fournisseurs, salaires et relevés bancaires.", "Apri l’azienda demo: un’agenzia svizzera con un anno di fatture, fatture fornitori, stipendi ed estratti conto."],
   ["Open the demo", "Demo öffnen", "Ouvrir la démo", "Apri la demo"],
   ["The demo is not available here.", "Die Demo ist hier nicht verfügbar.", "La démo n’est pas disponible ici.", "La demo non è disponibile qui."],
+  // Experiment notice
+  ["Batzio is a vibe-coding experiment.", "Batzio ist ein Vibe-Coding-Experiment.", "Batzio est une expérience de vibe coding.", "Batzio è un esperimento di vibe coding."],
+  ["Don’t use it for real data — and please don’t sue us.", "Verwende es nicht für echte Daten – und bitte verklag uns nicht.", "Ne l’utilisez pas pour de vraies données — et ne nous faites pas de procès, s’il vous plaît.", "Non usarlo per dati reali — e per favore non farci causa."],
+  // Sharing previews (open-graph images and page descriptions)
+  ["Swiss accounting that keeps up with you", "Schweizer Buchhaltung, die mit dir Schritt hält", "La comptabilité suisse qui suit votre rythme", "La contabilità svizzera che tiene il tuo passo"],
+  ["Instant on every device, ready for your AI assistant, compatible with the tools you already use.", "Sofort auf jedem Gerät, bereit für deinen KI-Assistenten, kompatibel mit den Tools, die du schon nutzt.", "Instantanée sur tous vos appareils, prête pour votre assistant IA, compatible avec les outils que vous utilisez déjà.", "Immediata su ogni dispositivo, pronta per il tuo assistente IA, compatibile con gli strumenti che usi già."],
+  ["A year of Swiss books, ready to explore", "Ein Jahr Schweizer Buchhaltung, bereit zum Erkunden", "Une année de comptabilité suisse, prête à explorer", "Un anno di contabilità svizzera, pronto da esplorare"],
+  ["Invoices, bills, payroll and bank statements of a demo agency — one click, nothing to set up.", "Rechnungen, Lieferantenrechnungen, Lohn und Kontoauszüge einer Demo-Agentur – ein Klick, nichts einzurichten.", "Factures, factures fournisseurs, salaires et relevés bancaires d’une agence de démonstration — un clic, rien à configurer.", "Fatture, fatture fornitori, salari ed estratti conto di un’agenzia demo — un clic, niente da configurare."],
+  ["One API for all your books", "Eine API für deine ganze Buchhaltung", "Une API pour toute votre comptabilité", "Un’API per tutta la tua contabilità"],
+  ["REST with OpenAPI, an MCP server for AI agents, and drop-in compatibility with your current accounting software.", "REST mit OpenAPI, ein MCP-Server für KI-Agenten und kompatibel mit deiner bisherigen Buchhaltungssoftware.", "REST avec OpenAPI, un serveur MCP pour les agents IA et la compatibilité avec votre logiciel comptable actuel.", "REST con OpenAPI, un server MCP per gli agenti IA e compatibilità con il tuo software contabile attuale."],
+  ["MCP server", "MCP-Server", "Serveur MCP", "Server MCP"],
+  ["Compatibility API", "Kompatibilitäts-API", "API de compatibilité", "API di compatibilità"],
 ];

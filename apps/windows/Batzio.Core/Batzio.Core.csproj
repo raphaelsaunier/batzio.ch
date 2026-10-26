@@ -11,5 +11,14 @@
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\strings.json" LogicalName="Batzio.Core.strings.json" />
+    <!-- The on-device engine (packages/local, `pnpm gen`). -->
+    <EmbeddedResource Include="..\..\..\packages\local\bundle\batzio-local.js" LogicalName="Batzio.Core.batzio-local.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- On this device: the engine runs in V8 on SQLite files. -->
+    <PackageReference Include="Microsoft.ClearScript.V8" Version="7.5.1.1" />
+    <PackageReference Include="Microsoft.ClearScript.V8.Native.win-x64" Version="7.5.1.1" />
+    <PackageReference Include="Microsoft.ClearScript.V8.Native.win-arm64" Version="7.5.1.1" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
   </ItemGroup>
 </Project>

@@ -2,7 +2,7 @@
   "name": "batzio",
   "version": "0.1.0",
   "private": true,
-  "description": "Batzio – agent-first Swiss accounting: web, API, Apple, Android and Windows apps",
+  "description": "Batzio \u2013 agent-first Swiss accounting: web, API, Apple, Android and Windows apps",
   "packageManager": "pnpm@12.4.2",
   "type": "module",
   "scripts": {
@@ -13,16 +13,18 @@
     "deploy:preview": "pnpm --filter @batzio/web deploy:preview",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "gen": "pnpm --filter @batzio/tokens gen && pnpm --filter @batzio/i18n gen",
+    "gen": "pnpm --filter @batzio/tokens gen && pnpm --filter @batzio/i18n gen && pnpm --filter @batzio/local build",
     "db:slots": "node packages/server/scripts/db-slots.mjs",
-    "check:gen": "pnpm --filter @batzio/tokens check && pnpm --filter @batzio/i18n check",
+    "check:gen": "pnpm --filter @batzio/tokens check && pnpm --filter @batzio/i18n check && pnpm --filter @batzio/local check",
     "brand": "pnpm --filter @batzio/tokens brand",
     "apple": "cd apps/apple && xcodegen generate && open Batzio.xcodeproj",
     "android": "cd apps/android && ./gradlew :app:installDebug"
   },
   "devDependencies": {
     "@types/node": "^24",
+    "@vitest/coverage-v8": "5.0.5",
     "typescript": "^5.9.3",
     "vitest": "5.0.5"
   }

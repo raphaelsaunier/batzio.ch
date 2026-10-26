@@ -90,7 +90,7 @@ function css() {
       if (mode === "dark" && v.dark === v.light) continue;
       lines.push(`  --${name}: ${v[mode]};`);
     }
-    if (mode === "light") lines.push(`  --radius: ${remToCss(tokens.radius.base)};`);
+    if (mode === "light") lines.push(`  --radius: ${remToCss(tokens.radius.base)};`, `  --radius-field: ${remToCss(tokens.radius.field)};`);
     for (const [name, s] of Object.entries(tokens.shadow)) lines.push(`  --${name}: ${shadowCss(s[mode], s.inset)};`);
     for (const [name, v] of Object.entries(tokens.css)) lines.push(`  --${name}: ${v[mode]};`);
     return lines.join("\n");

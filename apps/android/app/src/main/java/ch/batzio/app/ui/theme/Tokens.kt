@@ -31,6 +31,8 @@ data class BzScheme(
     val lilac: Color,
     val border: Color,
     val input: Color,
+    val field: Color,
+    val fieldReadonly: Color,
     val ring: Color,
     val chart1: Color,
     val chart2: Color,
@@ -81,6 +83,8 @@ val BzLight = BzScheme(
     lilac = Color(0xFFC1B4EC), // oklch(0.8 0.08 295)
     border = Color(0xFFDCE4EC), // oklch(0.915 0.014 248)
     input = Color(0xFFD4DEE7), // oklch(0.895 0.016 248)
+    field = Color(0xFFFFFFFF), // oklch(1 0 0)
+    fieldReadonly = Color(0xFFE7EEF5), // oklch(0.945 0.012 248)
     ring = Color(0xFF5590CC), // oklch(0.64 0.11 250)
     chart1 = Color(0xFF2863AB), // oklch(0.5 0.13 255)
     chart2 = Color(0xFF519BC8), // oklch(0.66 0.1 238)
@@ -131,6 +135,8 @@ val BzDark = BzScheme(
     lilac = Color(0xFFA295CB), // oklch(0.7 0.08 295)
     border = Color(0x17FFFFFF), // oklch(1 0 0 / 9%)
     input = Color(0x21FFFFFF), // oklch(1 0 0 / 13%)
+    field = Color(0x12FFFFFF), // oklch(1 0 0 / 7%)
+    fieldReadonly = Color(0x2E000000), // oklch(0 0 0 / 18%)
     ring = Color(0xFF4C8BC5), // oklch(0.62 0.11 248)
     chart1 = Color(0xFF5EACEB), // oklch(0.72 0.12 245)
     chart2 = Color(0xFF3E88B5), // oklch(0.6 0.1 238)
@@ -163,6 +169,7 @@ object BzRadius {
     val lg = 14.4.dp
     val xl = 18.4.dp
     val xxl = 22.4.dp
+    val field = 16.dp
     val pill = 999.dp
 }
 

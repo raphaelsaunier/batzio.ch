@@ -2,6 +2,7 @@ import { BatziPanel, DropOverlay } from "@/components/batzi/batzi-panel";
 import { BatziProvider } from "@/components/batzi/batzi-provider";
 import { LocaleSwitcher } from "@/components/i18n/locale-switcher";
 import { CommandMenu } from "@/components/shell/command-menu";
+import { ExperimentBanner } from "@/components/shell/experiment-banner";
 import { AppSidebar } from "@/components/shell/app-sidebar";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { buildNavigation } from "@batzio/server/navigation";
@@ -48,6 +49,7 @@ export default async function TenantLayout({
         canUseGoggles={canUseGoggles}
       />
       <SidebarInset className="min-w-0 bg-transparent">
+        <ExperimentBanner />
         <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 px-4 backdrop-blur-md md:px-6">
           <SidebarTrigger className="-ml-1 rounded-lg" />
           <CommandMenu tenant={tenant} sections={sections} />

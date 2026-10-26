@@ -31,6 +31,15 @@ export async function userContext(request: Request): Promise<{ user: UserRow; to
   return { user, token, control };
 }
 
+/** What the audit log keeps about the request itself: the call made by a script, and its retry key. */
+function provenanceOf(request: Request, source: Source): Record<string, string> | undefined {
+  const out: Record<string, string> = {};
+  if (source === "api" && request.method !== "GET") out.request = `${request.method} ${new URL(request.url).pathname}`;
+  const key = request.headers.get("idempotency-key")?.trim();
+  if (key) out.idempotency_key = key.slice(0, 120);
+  return Object.keys(out).length ? out : undefined;
+}
+
 /**
  * Authenticates an API request.
  * - `Authorization: Bearer bz_…` API keys are bound to one company.
@@ -43,6 +52,7 @@ export async function apiContext(request: Request, source: Source = "api"): Prom
   const meta = {
     ip: request.headers.get("cf-connecting-ip") ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
     userAgent: request.headers.get("user-agent"),
+    context: provenanceOf(request, source),
   };
   const files = env.FILES as R2LikeBucket | undefined;
 

@@ -266,14 +266,68 @@ public sealed class RecordView : UserControl
             if (screen.Files.Count == 0) files.Children.Add(Ui.Muted(L("Drop receipts or documents here to keep them with this record.")));
             page.Children.Add(Ui.Card(files));
 
-            if (screen.History.Count > 0)
-            {
-                var history = Ui.Stack(6, Ui.Section(L("History")));
-                foreach (var h in screen.History) history.Children.Add(Ui.Stack(0, Ui.Body(h.Summary ?? h.Action), Ui.Muted($"{h.ActorName} · {Fmt.DateTime(h.At)}", 12)));
-                page.Children.Add(Ui.Card(history));
-            }
+            if (screen.History.Count > 0) page.Children.Add(Ui.Card(HistorySection(screen.History, refresh)));
             return Ui.Page(page);
         });
+    }
+
+    /// <summary>A record's history in words: who (a person or software), from where, before → after, and undo.</summary>
+    private static StackPanel HistorySection(List<HistoryEntry> entries, Func<Task> refresh)
+    {
+        var state = AppState.Current;
+        var history = Ui.Stack(14, Ui.Section(L("History")));
+        foreach (var h in entries)
+        {
+            var who = new FontIcon { Glyph = h.Automated ? "\uE99A" : "\uE77B", FontSize = 14, Foreground = Ui.Brush(h.Automated ? "BzPrimaryBrush" : "BzMutedForegroundBrush") };
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(who, h.Automated ? L("Software") : L("Person"));
+            var body = Ui.Stack(3, Ui.Strong(string.Join(" · ", new[] { h.Title ?? h.Summary ?? h.Action, h.Actor?.Name ?? h.ActorName, h.Actor?.SourceLabel }.Where(s => !string.IsNullOrEmpty(s)))));
+            body.Children.Add(Ui.Muted(string.Join(" · ", new[] { h.When ?? Fmt.DateTime(h.At), h.Device }.Where(s => !string.IsNullOrEmpty(s))), 12));
+            foreach (var p in h.Provenance ?? []) body.Children.Add(Ui.Muted(p.Detail is null ? p.Label : $"{p.Label}: {p.Detail}", 12));
+            if (h.Undo?.UndoneBy is { } undoneBy) body.Children.Add(Ui.Muted(L("Undone in entry #{id}", ("id", undoneBy)), 12));
+            foreach (var c in (h.Changes ?? []).Take(6))
+            {
+                var line = c.Kind switch { "added" => $"+ {c.To}", "removed" => $"− {c.From}", _ => $"{c.From ?? "–"} → {c.To ?? "–"}" };
+                var text = Ui.Body($"{c.Label}: {line}", 12);
+                if (c.Kind == "removed") text.Foreground = Ui.Brush("BzDestructiveBrush");
+                body.Children.Add(text);
+            }
+            if ((h.Changes?.Count ?? 0) > 6) body.Children.Add(Ui.Muted(L("Show all {n} changes", ("n", h.Changes!.Count)), 12));
+            if (h.Undo?.Possible == true)
+            {
+                Button? undo = null;
+                undo = Ui.Button(L("Undo"), async () =>
+                {
+                    var dialog = new ContentDialog
+                    {
+                        Title = L("Undo this change?"),
+                        Content = L("Puts the record back the way it was before this change (or removes what it created, or brings back what it deleted). Booked, issued or paid records are never rewritten."),
+                        PrimaryButtonText = L("Undo"),
+                        CloseButtonText = L("Cancel"),
+                        DefaultButton = ContentDialogButton.Primary,
+                        XamlRoot = undo!.XamlRoot,
+                    };
+                    if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+                    try
+                    {
+                        await state.Api.SendAsync<ActionResponse>("POST", $"/audit_log/{h.Id}/undo");
+                        state.Toast(L("Change undone."));
+                        state.Touch();
+                        await refresh();
+                    }
+                    catch (ApiException e) { state.Toast(e.Message, "danger"); }
+                }, compact: true);
+                undo.HorizontalAlignment = HorizontalAlignment.Left;
+                body.Children.Add(undo);
+            }
+            var row = new Grid { ColumnSpacing = 10 };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            row.Children.Add(who);
+            Grid.SetColumn(body, 1);
+            row.Children.Add(body);
+            history.Children.Add(row);
+        }
+        return history;
     }
 
     /// <summary>A workflow step on a record (issue, record payment, book…), with confirmation or inputs.</summary>

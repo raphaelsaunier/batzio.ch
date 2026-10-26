@@ -75,10 +75,22 @@ public extension APIClient {
         body.locale = body.locale ?? locale
         r.httpBody = try? Self.encoder.encode(body)
         let request = r
-        let session = self.session
+        let transport = self.transport
         return AsyncThrowingStream { continuation in
             let task = Task {
                 do {
+                    guard let session = transport as? URLSession else {
+                        // On this device the answer arrives in one piece.
+                        let (data, response) = try await transport.send(request)
+                        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+                            throw APIError(status: http.statusCode, code: "agent", message: HTTPURLResponse.localizedString(forStatusCode: http.statusCode), fields: nil)
+                        }
+                        for line in String(decoding: data, as: UTF8.self).split(separator: "\n") {
+                            if let event = AgentEvent.parse(line) { continuation.yield(event) }
+                        }
+                        continuation.finish()
+                        return
+                    }
                     let (bytes, response) = try await session.bytes(for: request)
                     if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
                         var data = Data()

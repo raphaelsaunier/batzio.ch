@@ -30,16 +30,22 @@ export function roundTo(value: number, digits = 2): number {
   return (Math.sign(value) * Math.round(Math.abs(value) * f + 1e-8)) / f;
 }
 
+/** Rounds to whole cents, half away from zero, so a credit note mirrors its invoice to the Rappen. */
+export function roundHalfAway(cents: number): number {
+  // The epsilon keeps 12.4999999 (binary noise for 12.5) from rounding down.
+  return Math.sign(cents) * Math.round(Math.abs(cents) + 1e-9) || 0;
+}
+
 /** VAT contained in a gross amount: gross × rate / (100 + rate). */
 export function vatFromGross(grossCents: number, ratePercent: number): number {
   if (!ratePercent) return 0;
-  return Math.round((grossCents * ratePercent) / (100 + ratePercent));
+  return roundHalfAway((grossCents * ratePercent) / (100 + ratePercent));
 }
 
 /** VAT on top of a net amount. */
 export function vatFromNet(netCents: number, ratePercent: number): number {
   if (!ratePercent) return 0;
-  return Math.round((netCents * ratePercent) / 100);
+  return roundHalfAway((netCents * ratePercent) / 100);
 }
 
 export function sumCents(values: number[]): number {

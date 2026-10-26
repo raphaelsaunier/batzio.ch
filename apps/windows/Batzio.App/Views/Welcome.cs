@@ -90,7 +90,7 @@ public sealed class CoinTagline : UserControl
     }
 }
 
-public sealed class WelcomeView : UserControl
+public sealed partial class WelcomeView : UserControl
 {
     public WelcomeView()
     {
@@ -98,9 +98,10 @@ public sealed class WelcomeView : UserControl
         var tabs = new SelectorBar();
         var signIn = new SelectorBarItem { Text = L("Sign in"), IsSelected = true };
         var signUp = new SelectorBarItem { Text = L("Create account") };
+        var device = new SelectorBarItem { Text = L("On this device") };
         tabs.Items.Add(signIn);
         tabs.Items.Add(signUp);
-        tabs.SelectionChanged += (_, _) => form.Content = tabs.SelectedItem == signUp ? SignUpForm() : SignInForm();
+        tabs.Items.Add(device);
         form.Content = SignInForm();
 
         var server = new HyperlinkButton { Content = AppState.Current.Prefs.ServerUrl, HorizontalAlignment = HorizontalAlignment.Center };
@@ -115,15 +116,38 @@ public sealed class WelcomeView : UserControl
             }
         };
 
+        tabs.SelectionChanged += (_, _) =>
+        {
+            form.Content = tabs.SelectedItem == signUp ? SignUpForm() : tabs.SelectedItem == device ? DeviceForm() : SignInForm();
+            server.Visibility = tabs.SelectedItem == device ? Visibility.Collapsed : Visibility.Visible;
+        };
+
         var column = Ui.Stack(18,
             new CoinControl(170) { HorizontalAlignment = HorizontalAlignment.Center },
             new CoinTagline(),
             Ui.Muted(L("Born from a deep aversion to accounting. Drop a receipt, say what happened, Batzi does the books."), 15),
+            ExperimentNotice(),
             Ui.Card(Ui.Stack(12, tabs, form), 22),
             server);
         column.MaxWidth = 440;
         column.HorizontalAlignment = HorizontalAlignment.Center;
         Content = new ScrollViewer { Content = new Border { Child = column, Padding = new Thickness(24, 48, 24, 24) } };
+    }
+
+    /// <summary>Batzio is an experiment, not a product to trust with real books.</summary>
+    private static UIElement ExperimentNotice()
+    {
+        var text = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 12, FontFamily = Ui.Sans, Foreground = Ui.Brush("BzForegroundBrush") };
+        text.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = "🧪 " + L("Batzio is a vibe-coding experiment.") + " ", FontWeight = FontWeights.SemiBold });
+        text.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = L("Don’t use it for real data — and please don’t sue us.") });
+        var warning = Ui.Brush("BzWarningBrush") is SolidColorBrush b ? b.Color : Microsoft.UI.Colors.Orange;
+        return new Border
+        {
+            Child = text,
+            Padding = new Thickness(14, 8, 14, 8),
+            CornerRadius = new CornerRadius(12),
+            Background = new SolidColorBrush(warning) { Opacity = 0.16 },
+        };
     }
 
     private static UIElement SignInForm()
@@ -159,6 +183,40 @@ public sealed class WelcomeView : UserControl
         }, prominent: true);
         submit.HorizontalAlignment = HorizontalAlignment.Stretch;
         return Ui.Stack(12, name, email, password, company, language, demo, error, submit);
+    }
+}
+
+/// <summary>Works without a server: SQLite files on this device, no account, no internet.</summary>
+public sealed partial class WelcomeView
+{
+    private static UIElement DeviceForm()
+    {
+        var note = Ui.Muted(L("Everything stays on this device: no account and no internet needed. Batzi, the assistant, needs a connection and is off here."), 13);
+        var error = Ui.Body("");
+        error.Foreground = Ui.Brush("BzDestructiveBrush");
+        if (AppState.Current.HasDeviceData)
+        {
+            var resume = Ui.Button(L("Continue on this device"), async () =>
+            {
+                try { await AppState.Current.ContinueOnDeviceAsync(); }
+                catch (Core.Api.ApiException e) { error.Text = e.Message; }
+            }, prominent: true);
+            resume.HorizontalAlignment = HorizontalAlignment.Stretch;
+            return Ui.Stack(12, note, error, resume);
+        }
+        var name = new TextBox { Header = L("Your name") };
+        var company = new TextBox { Header = L("Company name") };
+        var language = new ComboBox { Header = L("Document language"), ItemsSource = new[] { "Deutsch", "Français", "Italiano", "English" }, SelectedIndex = 0 };
+        var demo = new CheckBox { Content = L("Start with demo data"), IsChecked = true };
+        var submit = Ui.Button(L("Start on this device"), async () =>
+        {
+            if (string.IsNullOrWhiteSpace(name.Text) || string.IsNullOrWhiteSpace(company.Text)) return;
+            var lang = new[] { "de", "fr", "it", "en" }[Math.Max(0, language.SelectedIndex)];
+            try { await AppState.Current.StartOnDeviceAsync(name.Text.Trim(), company.Text.Trim(), lang, demo.IsChecked == true); }
+            catch (Core.Api.ApiException e) { error.Text = e.Message; }
+        }, prominent: true);
+        submit.HorizontalAlignment = HorizontalAlignment.Stretch;
+        return Ui.Stack(12, note, name, company, language, demo, error, submit);
     }
 }
 

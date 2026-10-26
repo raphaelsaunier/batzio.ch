@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Batzio.Core.Local;
 using Batzio.Core.Models;
 using static Batzio.Core.Localization.Loc;
 
@@ -25,7 +26,7 @@ public sealed record Download(byte[] Bytes, string FileName, string MimeType);
 /// Talks to a Batzio server: <c>Authorization: Bearer &lt;session&gt;</c>, <c>X-Tenant</c> for the chosen
 /// company and <c>Accept-Language</c> so every text comes back translated.
 /// </summary>
-public sealed class ApiClient(string baseUrl, string? token = null, string? tenant = null, string locale = "en", string mode = "simple")
+public sealed class ApiClient(string baseUrl, string? token = null, string? tenant = null, string locale = "en", string mode = "simple", HttpClient? http = null)
 {
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromMinutes(10) };
 
@@ -45,6 +46,23 @@ public sealed class ApiClient(string baseUrl, string? token = null, string? tena
         return new Uri($"{BaseUrl}{path}?{string.Join("&", parts)}");
     }
 
+    /// <summary>A request can be sent only once; a retry sends this copy (same headers, same key, same body).</summary>
+    private static async Task<HttpRequestMessage> Copy(HttpRequestMessage request)
+    {
+        var copy = new HttpRequestMessage(request.Method, request.RequestUri);
+        foreach (var h in request.Headers) copy.Headers.TryAddWithoutValidation(h.Key, h.Value);
+        if (request.Content is not null)
+        {
+            var bytes = await request.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+            copy.Content = new ByteArrayContent(bytes);
+            foreach (var h in request.Content.Headers) copy.Content.Headers.TryAddWithoutValidation(h.Key, h.Value);
+        }
+        return copy;
+    }
+
+    /// <summary>"Batzio-Windows/0.1.0 (Windows 10.0.26100)": the audit log shows which app made a change.</summary>
+    public static readonly string UserAgent = $"Batzio-Windows/{typeof(ApiClient).Assembly.GetName().Version?.ToString(3) ?? "0"} ({System.Runtime.InteropServices.RuntimeInformation.OSDescription})";
+
     private static string V1(string path) => path.StartsWith("/api/", StringComparison.Ordinal) ? path : "/api/v1" + path;
 
     public HttpRequestMessage Request(HttpMethod method, string path, IDictionary<string, string?>? query = null)
@@ -52,21 +70,50 @@ public sealed class ApiClient(string baseUrl, string? token = null, string? tena
         var r = new HttpRequestMessage(method, Url(path, query));
         r.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         r.Headers.AcceptLanguage.Add(new StringWithQualityHeaderValue(Locale));
+        r.Headers.TryAddWithoutValidation("User-Agent", UserAgent);
+        // A write sent twice (a retry after a dropped connection) is answered once.
+        if (method != HttpMethod.Get) r.Headers.TryAddWithoutValidation("Idempotency-Key", Guid.NewGuid().ToString());
         if (Token is not null) r.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Token);
         if (Tenant is not null) r.Headers.Add("X-Tenant", Tenant);
         return r;
     }
 
-    private static async Task<HttpResponseMessage> Execute(HttpRequestMessage request, HttpCompletionOption completion = HttpCompletionOption.ResponseContentRead, CancellationToken ct = default)
+    /// <summary>On this device, requests go to the engine instead of the network.</summary>
+    public bool IsOnDevice => LocalEngine.IsOnDevice(BaseUrl);
+
+    private async Task<HttpResponseMessage> Execute(HttpRequestMessage request, HttpCompletionOption completion = HttpCompletionOption.ResponseContentRead, CancellationToken ct = default)
     {
         HttpResponseMessage response;
         try
         {
-            response = await Http.SendAsync(request, completion, ct).ConfigureAwait(false);
+            if (http is null && IsOnDevice)
+            {
+                using var local = new HttpClient(LocalEngine.Current.Handler()) { Timeout = TimeSpan.FromMinutes(10) };
+                response = await local.SendAsync(request, completion, ct).ConfigureAwait(false);
+            }
+            else
+            {
+                var client = http ?? Http;
+                var copy = request.Headers.Contains("Idempotency-Key") ? await Copy(request).ConfigureAwait(false) : null;
+                try
+                {
+                    response = await client.SendAsync(request, completion, ct).ConfigureAwait(false);
+                }
+                catch (HttpRequestException) when (copy is not null)
+                {
+                    // Safe to send again: the same key makes the server answer the first attempt.
+                    await Task.Delay(1000, ct).ConfigureAwait(false);
+                    response = await client.SendAsync(copy, completion, ct).ConfigureAwait(false);
+                }
+            }
         }
         catch (HttpRequestException)
         {
             throw new ApiException(0, "offline", L("Batzio can’t be reached. Check your connection and the server address."));
+        }
+        catch (Exception e) when (IsOnDevice && e is not OperationCanceledException)
+        {
+            throw new ApiException(500, "local", e.Message);
         }
         if (response.IsSuccessStatusCode) return response;
         var text = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);

@@ -8,6 +8,7 @@ import { AgentChats, CompatCoverage, CompatDiff, McpConfig, MoveInSteps } from "
 import { SpeedDemo } from "@/components/marketing/speed-demo";
 import { Button } from "@/components/ui/button";
 import { getT } from "@/lib/i18n/server";
+import { ExperimentBanner } from "@/components/shell/experiment-banner";
 import { currentUser } from "@/lib/server/session";
 import { N_ } from "@batzio/i18n";
 
@@ -51,6 +52,7 @@ export default async function LandingPage() {
   ];
   return (
     <div className="bg-background min-h-svh overflow-x-clip">
+      <ExperimentBanner />
       <header className="bg-background/80 sticky top-0 z-30 border-b backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
           <Brand />
@@ -86,7 +88,7 @@ export default async function LandingPage() {
       <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[44rem] bg-[radial-gradient(ellipse_at_top,oklch(0.66_0.09_238/0.2),transparent_62%)]" />
         <div className="relative mx-auto flex max-w-4xl flex-col items-center px-4 pt-14 pb-16 text-center sm:px-6 sm:pt-20">
-          <CoinHero suite="Accounting Suite" sweet={t("Accounting, Sweet!")} />
+          <CoinHero suite="Accounting Suite" sweet="Accounting, Sweet!" />
           <p className="text-muted-foreground mt-10 max-w-2xl text-lg leading-8 text-balance">
             {t("Swiss bookkeeping that feels instant, works on every device and with your AI assistant, fits the tools you already use — and moves in from your old software in one click.")}
           </p>

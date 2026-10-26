@@ -168,7 +168,30 @@ data class Bootstrap(
 @Serializable data class RelatedRow(val id: Int, val title: String, val status: JsonElement? = null)
 @Serializable data class RelatedList(val resource: String, val label: String, val foreignKey: String, val total: Int, val rows: List<RelatedRow>)
 @Serializable data class Attachment(val id: Int, val name: String, val mime_type: String? = null, val size: Long = 0)
-@Serializable data class HistoryEntry(val id: Int, val at: String, val actor_name: String? = null, val source: String, val action: String, val summary: String? = null)
+@Serializable data class HistoryEntry(
+    val id: Int,
+    val at: String,
+    val actor_name: String? = null,
+    val source: String,
+    val action: String,
+    val summary: String? = null,
+    /** The change in words (older servers send only the fields above). */
+    val title: String? = null,
+    val `when`: String? = null,
+    val actor: HistoryActor? = null,
+    val provenance: List<HistoryProvenance> = emptyList(),
+    val device: String? = null,
+    val changes: List<HistoryChange> = emptyList(),
+    val undo: HistoryUndo? = null,
+) {
+    /** Batzi, an MCP client, an API script, an email or an import rather than a person. */
+    val automated: Boolean get() = actor?.automated ?: (source != "ui" && source != "app")
+}
+
+@Serializable data class HistoryActor(val name: String? = null, val automated: Boolean = false, val sourceLabel: String = "")
+@Serializable data class HistoryProvenance(val label: String, val detail: String? = null)
+@Serializable data class HistoryChange(val field: String, val label: String, val kind: String, val from: String? = null, val to: String? = null)
+@Serializable data class HistoryUndo(val possible: Boolean = false, val undoneBy: Int? = null)
 @Serializable data class RecordScreen(
     val record: JsonObject,
     val title: String,

@@ -16,6 +16,8 @@ export interface CompanySettings {
   language: "de" | "fr" | "it" | "en";
   logo_file_id: number | null;
   accent_color: string;
+  /** Page footer on documents (two lines at most); empty prints company, UID and IBAN. */
+  document_footer: string;
 }
 
 export interface AccountingSettings {
@@ -58,6 +60,7 @@ export const DEFAULT_COMPANY: CompanySettings = {
   language: "de",
   logo_file_id: null,
   accent_color: "#2f5f8f",
+  document_footer: "",
 };
 
 export const DEFAULT_ACCOUNTING: AccountingSettings = {

@@ -1,5 +1,8 @@
 import BatzioKit
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 struct SettingsView: View {
     @Environment(AppModel.self) private var app
@@ -33,15 +36,18 @@ struct SettingsView: View {
                             }
                         }
                     }
-                    LabeledContent(L("Batzi"), value: settings.agent ? L("Ready") : L("Needs an Anthropic API key on the server"))
+                    LabeledContent(L("Batzi"), value: settings.agent ? L("Ready") : app.prefs.isOnDevice ? L("Needs an internet connection") : L("Needs an Anthropic API key on the server"))
                 }
                 Section(L("Company")) {
                     NavigationLink(L("Company profile")) { SettingsFormView(group: "company", form: settings.forms.company, canWrite: settings.canWrite, refresh: refresh) }
                     NavigationLink(L("Accounting")) { SettingsFormView(group: "accounting", form: settings.forms.accounting, canWrite: settings.canWrite, refresh: refresh) }
                     NavigationLink(L("Document texts")) { SettingsFormView(group: "texts", form: settings.forms.texts, canWrite: settings.canWrite, refresh: refresh) }
                     NavigationLink(L("Number formats")) { NumberingView(formats: settings.numbering, canWrite: settings.canWrite, refresh: refresh) }
-                    if app.bootstrap?.can("users") ?? false { NavigationLink(L("Users & roles")) { TeamView() } }
-                    NavigationLink(L("API & MCP")) { ApiKeysView() }
+                    // On this device there is nobody to invite and nothing to connect to.
+                    if !app.prefs.isOnDevice {
+                        if app.bootstrap?.can("users") ?? false { NavigationLink(L("Users & roles")) { TeamView() } }
+                        NavigationLink(L("API & MCP")) { ApiKeysView() }
+                    }
                 }
                 Section(L("Master data")) {
                     ForEach((app.bootstrap?.resources ?? []).filter { $0.nav?.group == "settings" }.sorted { ($0.nav?.order ?? 0) < ($1.nav?.order ?? 0) }) { r in
@@ -52,7 +58,14 @@ struct SettingsView: View {
                     }
                 }
                 Section {
-                    LabeledContent(L("Server"), value: app.prefs.serverURL)
+                    if app.prefs.isOnDevice, let folder = app.deviceFolder {
+                        LabeledContent(L("On this device"), value: folder.path).textSelection(.enabled)
+                        #if os(macOS)
+                        Button(L("Show the folder")) { NSWorkspace.shared.activateFileViewerSelecting([folder]) }
+                        #endif
+                    } else {
+                        LabeledContent(L("Server"), value: app.prefs.serverURL)
+                    }
                     LabeledContent(L("Version"), value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
                 }
             }
@@ -68,6 +81,7 @@ private struct AccountSection: View {
     @Environment(AppModel.self) private var app
     @State private var changingPassword = false
     @State private var creatingCompany = false
+    @State private var confirmingDelete = false
 
     var body: some View {
         Section(L("You")) {
@@ -100,8 +114,19 @@ private struct AccountSection: View {
                 }
             }
             Button(L("New company…")) { creatingCompany = true }
-            Button(L("Change password…")) { changingPassword = true }
-            Button(L("Sign out"), role: .destructive) { Task { await app.signOut() } }
+            if app.prefs.isOnDevice {
+                Button(L("Sign out")) { Task { await app.signOut() } }
+                Button(L("Delete everything on this device…"), role: .destructive) { confirmingDelete = true }
+            } else {
+                Button(L("Change password…")) { changingPassword = true }
+                Button(L("Sign out"), role: .destructive) { Task { await app.signOut() } }
+            }
+        }
+        .confirmationDialog(L("Delete everything on this device…"), isPresented: $confirmingDelete, titleVisibility: .visible) {
+            Button(L("Delete everything"), role: .destructive) { Task { await app.deleteEverythingOnDevice() } }
+            Button(L("Cancel"), role: .cancel) {}
+        } message: {
+            Text(L("This deletes every company, document and file stored on this device. It cannot be undone."))
         }
         .sheet(isPresented: $changingPassword) { PasswordSheet() }
         .sheet(isPresented: $creatingCompany) { NewCompanySheet() }

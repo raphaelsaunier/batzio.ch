@@ -2,6 +2,8 @@ import { msg, type Msg } from "@batzio/i18n";
 import { importStatements, parseCamt, parseCsv } from "../banking";
 import type { Ctx } from "../ctx";
 import { toAppError } from "../errors";
+import { formatDate } from "@batzio/core/format";
+import { fileFingerprint } from "../duplicates";
 import { storeFile, type FileRow } from "../files";
 import { runAgent, contextBlock, fileBlocks, type AgentEnv } from "./claude";
 import { importTable, type RecordRef } from "./importers";
@@ -141,6 +143,17 @@ async function handleDeterministically(ctx: Ctx, file: FileRow, bytes: Uint8Arra
 export async function dropFiles(ctx: Ctx, files: { name: string; type: string; bytes: ArrayBuffer }[], source: InboxSource = "upload"): Promise<DropOutcome[]> {
   const out: DropOutcome[] = [];
   for (const f of files) {
+    // The same receipt dropped again is recognised by its fingerprint and never booked twice.
+    const earlier = await ctx.db.first<FileRow>("SELECT * FROM files WHERE sha256 = ? ORDER BY id LIMIT 1", await fileFingerprint(f.bytes));
+    if (earlier) {
+      const used = await whereFileIsUsed(ctx, earlier);
+      const message = used
+        ? msg("{name} is already in Batzio as {record}. Nothing was booked twice.", { name: f.name, record: used.label })
+        : msg("{name} is already in Batzio (uploaded {date}). Nothing was booked twice.", { name: f.name, date: formatDate(earlier.created_at) });
+      const inboxId = await createInboxItem(ctx, { source, kind: "duplicate", status: "done", title: f.name, summary: JSON.stringify(message), fileId: earlier.id });
+      out.push({ file: { id: earlier.id, name: earlier.name, mime: earlier.mime_type }, inboxId, handled: true, kind: "duplicate", message, records: used ? [used] : [] });
+      continue;
+    }
     const stored = await storeFile(ctx, f, { description: "Dropped on Batzio" });
     let outcome: Omit<DropOutcome, "file" | "inboxId"> | null = null;
     try {
@@ -163,6 +176,16 @@ export async function dropFiles(ctx: Ctx, files: { name: string; type: string; b
     });
   }
   return out;
+}
+
+/** The bill, expense or record an earlier copy of a file belongs to. */
+async function whereFileIsUsed(ctx: Ctx, file: FileRow): Promise<RecordRef | null> {
+  for (const resource of ["bills", "expenses"] as const) {
+    const row = await ctx.db.first<{ id: number; nr: string | null; title: string | null }>(`SELECT id, nr, title FROM ${resource} WHERE file_id = ? ORDER BY id LIMIT 1`, file.id);
+    if (row) return { resource, id: row.id, label: row.nr ?? row.title ?? `#${row.id}` };
+  }
+  if (file.ref_type && file.ref_id) return { resource: file.ref_type, id: Number(file.ref_id), label: `${file.ref_type} #${file.ref_id}` };
+  return null;
 }
 
 function kindFromFile(file: FileRow): string {

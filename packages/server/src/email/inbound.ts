@@ -110,7 +110,13 @@ export async function ingestEmailInto(
     user: trusted && user ? { id: user.id, name: user.name, email: user.email } : null,
     role: trusted && membership ? membership.role : ("member" as Role),
     scope: "write",
-    actor: { type: trusted && user ? "user" : "system", id: trusted && user ? user.id : null, name: `${fromName || fromAddress || "Unknown"} (email)`, source: "email" },
+    actor: {
+      type: trusted && user ? "user" : "system",
+      id: trusted && user ? user.id : null,
+      name: `${fromName || fromAddress || "Unknown"} (email)`,
+      source: "email",
+      context: { email_from: fromAddress, email_subject: email.subject?.slice(0, 120) ?? null, trusted_sender: trusted },
+    },
     db,
     control,
     files: deps.files,
@@ -130,7 +136,8 @@ export async function ingestEmailInto(
 
   if (!trusted && !open.length) {
     // Nothing to record and no one to take orders from: keep it for a human glance.
-    const inboxId = await createInboxItem(ctx, { source: "email", kind: drops.length ? "attachments" : "message", status: drops.length ? "done" : "new", title: email.subject || "(no subject)", sender: fromAddress, subject: email.subject, body, payload: { trusted, files: drops.map((d) => d.file.id) } });
+    // (Attachments seen before — a reminder with the same invoice — are recognised and not booked twice.)
+    const inboxId = await createInboxItem(ctx, { source: "email", kind: drops.length ? "attachments" : "message", status: drops.length ? "done" : "new", title: email.subject || "(no subject)", sender: fromAddress, subject: email.subject, body, fileId: drops[0]?.file.id ?? null, payload: { trusted, files: drops.map((d) => d.file.id), handled: drops.filter((d) => d.handled).map((d) => d.message) } });
     return { ok: true, inboxId, trusted };
   }
 

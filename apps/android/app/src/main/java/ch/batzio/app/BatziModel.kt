@@ -103,7 +103,11 @@ class BatziModel(private val app: AppModel) {
                         is AgentEvent.Tool -> edit { m -> m.copy(tools = m.tools.filterNot { it.id == e.outcome.id } + e.outcome) }
                         is AgentEvent.Done -> edit { it.copy(refused = e.refused) }
                         is AgentEvent.Error -> edit {
-                            it.copy(text = it.text + if (e.message == "no_agent") L("Batzi needs an Anthropic API key on the server before it can chat. Quick sentences and file drops still work.") else e.message)
+                            it.copy(text = it.text + when {
+                                e.message != "no_agent" -> e.message
+                                app.isOnDevice -> L("Batzi needs an internet connection. On this device, quick sentences and file drops still work.")
+                                else -> L("Batzi needs an Anthropic API key on the server before it can chat. Quick sentences and file drops still work.")
+                            })
                         }
                     }
                 }

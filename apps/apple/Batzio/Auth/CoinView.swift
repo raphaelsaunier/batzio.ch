@@ -93,7 +93,7 @@ struct CoinTagline: View {
 
     var body: some View {
         ZStack {
-            Text("Accounting Suite")
+            Text(verbatim: "Accounting Suite")
                 .font(.bzDisplay(28, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .overlay(alignment: .leading) {
@@ -103,7 +103,7 @@ struct CoinTagline: View {
                 }
                 .opacity(phase >= 1 && phase < 3 ? 1 : 0)
                 .offset(y: phase >= 3 ? -14 : 0)
-            Text("Accounting, Sweet!")
+            Text(verbatim: "Accounting, Sweet!")
                 .font(.bzDisplay(30))
                 .foregroundStyle(LinearGradient(colors: BZGradient.metal, startPoint: .leading, endPoint: .trailing))
                 .opacity(phase >= 3 ? 1 : 0)

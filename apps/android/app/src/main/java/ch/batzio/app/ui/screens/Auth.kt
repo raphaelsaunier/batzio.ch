@@ -5,11 +5,13 @@ import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
@@ -23,11 +25,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.PhoneAndroid
+import androidx.compose.material.icons.outlined.Science
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
@@ -49,9 +56,14 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -86,15 +98,13 @@ fun Coin(size: Dp = 180.dp, autoplay: Boolean = true) {
     }
     val c = cos(Math.toRadians(angle.value.toDouble())).toFloat()
     Box(Modifier.size(size, size * 1.25f), contentAlignment = Alignment.Center) {
-        // Shadow on the "table": tight and darker once the coin has landed.
-        Box(
-            Modifier
-                .align(Alignment.BottomCenter)
-                .size(size * (0.8f - 0.3f * lift.value), size * 0.09f)
-                .blur(10.dp)
-                .alpha(0.35f - 0.25f * lift.value)
-                .background(Color.Black, CircleShape),
-        )
+        // Shadow on the "table": a soft ellipse, tight and darker once the coin has landed.
+        Canvas(Modifier.align(Alignment.BottomCenter).size(size, size * 0.14f)) {
+            val radius = this.size.width * (0.4f - 0.15f * lift.value)
+            scale(1f, this.size.height / (radius * 2), pivot = center) {
+                drawCircle(Brush.radialGradient(listOf(Color.Black.copy(alpha = 0.32f - 0.22f * lift.value), Color.Transparent), center, radius), radius, center)
+            }
+        }
         Image(
             painterResource(if (c >= 0) R.drawable.coin_front else R.drawable.coin_back),
             contentDescription = "Batzio",
@@ -132,7 +142,7 @@ fun CoinTagline() {
 
 @Composable
 fun WelcomeScreen(app: AppModel) {
-    var signingUp by remember { mutableStateOf(false) }
+    var tab by remember { mutableIntStateOf(0) }
     Column(
         Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -144,14 +154,28 @@ fun WelcomeScreen(app: AppModel) {
             L("Born from a deep aversion to accounting. Drop a receipt, say what happened, Batzi does the books."),
             style = MaterialTheme.typography.bodyLarge, color = LocalBz.current.mutedForeground, textAlign = TextAlign.Center, modifier = Modifier.widthIn(max = 440.dp),
         )
+        ExperimentNotice()
         Column(Modifier.widthIn(max = 440.dp).fillMaxWidth().neuCard(padding = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                SegmentedButton(!signingUp, { signingUp = false }, SegmentedButtonDefaults.itemShape(0, 2)) { Text(L("Sign in")) }
-                SegmentedButton(signingUp, { signingUp = true }, SegmentedButtonDefaults.itemShape(1, 2)) { Text(L("Create account")) }
+                listOf(L("Sign in"), L("Create account")).forEachIndexed { i, label ->
+                    SegmentedButton(tab == i, { tab = i }, SegmentedButtonDefaults.itemShape(i, 2)) { Text(label, maxLines = 1) }
+                }
             }
-            if (signingUp) SignUpForm(app) else SignInForm(app)
+            when (tab) {
+                0 -> SignInForm(app)
+                1 -> SignUpForm(app)
+                else -> DeviceForm(app)
+            }
         }
-        ServerField(app)
+        if (tab != 2) {
+            // Working without a server is its own path, not a third way to sign in.
+            TextButton({ tab = 2 }) {
+                Icon(Icons.Outlined.PhoneAndroid, null, Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(L("On this device"))
+            }
+            ServerField(app)
+        }
     }
 }
 
@@ -199,6 +223,60 @@ private fun SignUpForm(app: AppModel) {
             try { app.signUp(name, email.trim(), password, company, language, demo) } catch (e: Exception) { error = e.message } finally { busy = false }
         }
     }, prominent = true, enabled = !busy && name.isNotBlank() && email.isNotBlank() && password.length >= 10 && company.isNotBlank(), modifier = Modifier.fillMaxWidth())
+}
+
+/** Batzio is an experiment, not a product to trust with real books. */
+@Composable
+fun ExperimentNotice() {
+    val t = LocalBz.current
+    Row(
+        Modifier.widthIn(max = 440.dp).clip(RoundedCornerShape(12.dp)).background(t.warning.copy(alpha = 0.16f)).padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Outlined.Science, null, tint = t.warning, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(
+            buildAnnotatedString {
+                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(L("Batzio is a vibe-coding experiment.")) }
+                append(" ")
+                append(L("Don’t use it for real data — and please don’t sue us."))
+            },
+            style = MaterialTheme.typography.bodySmall,
+        )
+    }
+}
+
+/** Works without a server: SQLite files on this device, no account, no internet. */
+@Composable
+private fun DeviceForm(app: AppModel) {
+    var name by remember { mutableStateOf("") }
+    var company by remember { mutableStateOf("") }
+    var demo by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val language = if (app.locale == "en") "de" else app.locale
+    fun run(work: suspend () -> Unit) = scope.launch {
+        busy = true
+        try { work() } catch (e: Exception) { error = e.message } finally { busy = false }
+    }
+    Text(
+        L("Everything stays on this device: no account and no internet needed. Batzi, the assistant, needs a connection and is off here."),
+        style = MaterialTheme.typography.bodySmall, color = LocalBz.current.mutedForeground,
+    )
+    if (app.hasDeviceData) {
+        error?.let { Text(it, color = LocalBz.current.destructive) }
+        NeuButton(L("Continue on this device"), { run { app.continueOnDevice() } }, prominent = true, enabled = !busy, modifier = Modifier.fillMaxWidth())
+        return
+    }
+    OutlinedTextField(name, { name = it }, label = { Text(L("Your name")) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+    OutlinedTextField(company, { company = it }, label = { Text(L("Company name")) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Checkbox(demo, { demo = it })
+        Text(L("Start with demo data"))
+    }
+    error?.let { Text(it, color = LocalBz.current.destructive) }
+    NeuButton(L("Start on this device"), { run { app.startOnDevice(name.trim(), company.trim(), language, demo) } }, prominent = true, enabled = !busy && name.isNotBlank() && company.isNotBlank(), modifier = Modifier.fillMaxWidth())
 }
 
 @Composable

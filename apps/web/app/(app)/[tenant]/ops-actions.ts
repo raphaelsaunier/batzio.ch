@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { scanDuplicates } from "@batzio/server/duplicates";
 import { verifyAuditLog } from "@batzio/server/audit";
 import { importStatements, parseCamt, parseCsv } from "@batzio/server/banking";
 import { assertCan } from "@batzio/server/ctx";
@@ -64,6 +65,19 @@ export async function verifyAuditAction(tenant: string): Promise<ActionResponse>
     return v.ok
       ? { ok: true, message: t("Audit chain intact: {n} entries verified.", { n: v.checked }) }
       : { ok: false, error: t("Audit chain broken at entry #{id} ({n} entries verified before).", { id: v.brokenAt ?? "?", n: v.checked }) };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function scanDuplicatesAction(tenant: string): Promise<ActionResponse> {
+  try {
+    const ctx = await tenantCtx(tenant);
+    assertCan(ctx, "audit", "write");
+    const flagged = await scanDuplicates(ctx);
+    revalidatePath(`/${tenant}/duplicates`);
+    const t = await getT();
+    return { ok: true, message: t("{n} possible duplicates found.", { n: flagged }) };
   } catch (e) {
     return fail(e);
   }

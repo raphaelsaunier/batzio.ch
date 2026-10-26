@@ -1,7 +1,7 @@
 import Anthropic, { toFile } from "@anthropic-ai/sdk";
 import { today } from "@batzio/core/format";
 import { LOCALE_NAMES, type Locale } from "@batzio/i18n";
-import type { Ctx } from "../ctx";
+import { withProvenance, type Ctx } from "../ctx";
 import { toAppError } from "../errors";
 import { readFile } from "../files";
 import { detectTable, readTables } from "./tables";
@@ -195,7 +195,8 @@ export async function executeToolUse(ctx: Ctx, block: { id: string; name: string
     };
   }
   try {
-    const result = await runTool(ctx, tool, input);
+    // The audit log names the tool behind every change Batzi makes.
+    const result = await runTool(withProvenance(ctx, { tool: tool.name, tool_use: block.id }), tool, input);
     return {
       result: { type: "tool_result", tool_use_id: block.id, content: serialize(result) },
       outcome: { id: block.id, tool: tool.name, title: tool.title, ok: true, summary: summarize(tool.name, result), record: recordFrom(tool.name, input, result) },
@@ -213,7 +214,8 @@ export async function executeToolUse(ctx: Ctx, block: { id: string; name: string
  * Sends a user turn and runs the tool loop until Claude is done. Every
  * request and response is persisted as it happens; `emit` streams progress.
  */
-export async function runAgent(ctx: Ctx, threadId: string, userContent: Block[], userDisplay: Display | null, env: AgentEnv): Promise<void> {
+export async function runAgent(baseCtx: Ctx, threadId: string, userContent: Block[], userDisplay: Display | null, env: AgentEnv): Promise<void> {
+  const ctx = withProvenance(baseCtx, { thread: threadId });
   const emit = env.emit ?? (() => undefined);
   if (!env.apiKey && !env.client) {
     emit({ type: "error", message: "Batzi’s brain (ANTHROPIC_API_KEY) is not configured." });
@@ -301,7 +303,8 @@ export async function runAgent(ctx: Ctx, threadId: string, userContent: Block[],
 }
 
 /** Runs a tool call the user confirmed, records it and lets Batzi follow up. */
-export async function confirmToolUse(ctx: Ctx, threadId: string, toolUseId: string, approve: boolean, env: AgentEnv): Promise<void> {
+export async function confirmToolUse(baseCtx: Ctx, threadId: string, toolUseId: string, approve: boolean, env: AgentEnv): Promise<void> {
+  const ctx = withProvenance(baseCtx, { thread: threadId, confirmed: true });
   const history = await loadThread(ctx, threadId);
   const use = history
     .filter((m) => m.role === "assistant")

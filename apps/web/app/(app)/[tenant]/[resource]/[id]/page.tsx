@@ -9,10 +9,11 @@ import { DocumentSheet } from "@/components/document/document-sheet";
 import { RecordForm } from "@/components/resource/record-form";
 import { PageBody, PageHeader } from "@/components/shell/page-header";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatDateTime } from "@batzio/core/format";
+import { TabsContent } from "@/components/ui/tabs";
+import { RecordTabs } from "@/components/resource/record-tabs";
 import { getResource } from "@batzio/server/resources/registry";
-import type { AuditRow } from "@batzio/server/audit";
+import { historyEntry, recordHistory } from "@batzio/server/history";
+import { HistoryTimeline } from "@/components/resource/history-timeline";
 import { availableActions, findRecord, listRecords, recordTitle, refLabels, toApi } from "@batzio/server/crud";
 import { canCtx } from "@batzio/server/ctx";
 import { documentSheetContext } from "@/lib/server/document-sheet";
@@ -59,10 +60,15 @@ export default async function RecordPage({ params }: { params: Promise<Params> }
       return { rel, relRes, relView, list, labels: await refLabels(ctx, relRes, list.rows, getResource) };
     }),
   );
-  const history = canCtx(ctx, "audit", "read")
-    ? await ctx.db.all<AuditRow>("SELECT * FROM audit_log WHERE resource = ? AND resource_id = ? ORDER BY id DESC LIMIT 50", res.name, String(id))
-    : [];
+  const history = canCtx(ctx, "audit", "read") ? await recordHistory(ctx, t, res.name, id, 50) : [];
+  // An audit entry is shown in words above its raw fields.
+  const auditEntry = res.name === "audit_log" ? await historyEntry(ctx, t, id) : null;
   const visibleRelated = related.filter((r): r is NonNullable<typeof r> => r !== null);
+  const tabs = [
+    ...visibleRelated.filter((r) => r.list.total > 0).map((r) => ({ value: r.rel.resource, label: t(r.rel.label), count: r.list.total })),
+    ...(history.length ? [{ value: "history", label: t("History"), count: null }] : []),
+    ...visibleRelated.filter((r) => r.list.total === 0).map((r) => ({ value: r.rel.resource, label: t(r.rel.label), count: 0 })),
+  ];
 
   return (
     <>
@@ -92,6 +98,11 @@ export default async function RecordPage({ params }: { params: Promise<Params> }
       <PageBody>
         <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="min-w-0 space-y-6">
+            {auditEntry && (
+              <div className="neu-card p-5">
+                <HistoryTimeline tenant={tenant} entries={[auditEntry]} />
+              </div>
+            )}
             {res.view === "document" ? (
               <DocumentSheet
                 key={String(record.updated_at ?? "")}
@@ -121,18 +132,7 @@ export default async function RecordPage({ params }: { params: Promise<Params> }
               />
             )}
             {(visibleRelated.length > 0 || history.length > 0) && (
-              <Tabs defaultValue={visibleRelated[0]?.rel.resource ?? "history"} className="gap-4">
-                <TabsList className="flex-wrap">
-                  {visibleRelated.map(({ rel, list }) => (
-                    <TabsTrigger key={rel.resource} value={rel.resource}>
-                      {t(rel.label)}
-                      <Badge variant="secondary" className="ml-1.5 h-5 px-1.5 num">
-                        {list.total}
-                      </Badge>
-                    </TabsTrigger>
-                  ))}
-                  {history.length > 0 && <TabsTrigger value="history">{t("History")}</TabsTrigger>}
-                </TabsList>
+              <RecordTabs tabs={tabs}>
                 {visibleRelated.map(({ rel, relRes, relView, list, labels: relLabels }) => (
                   <TabsContent key={rel.resource} value={rel.resource} className="space-y-2">
                     <DataTable
@@ -161,25 +161,10 @@ export default async function RecordPage({ params }: { params: Promise<Params> }
                 ))}
                 {history.length > 0 && (
                   <TabsContent value="history">
-                    <ol className="relative space-y-4 border-l pl-5">
-                      {history.map((h) => (
-                        <li key={h.id} className="text-sm">
-                          <span className="absolute -left-1.5 mt-1.5 size-3 rounded-full border-2 border-background bg-primary" />
-                          <div className="flex flex-wrap items-baseline gap-x-2">
-                            <span className="font-medium">{h.summary ?? h.action}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {formatDateTime(h.at)} · {h.actor_name} · {h.source === "agent" ? "Batzi" : h.source.toUpperCase()}
-                            </span>
-                          </div>
-                          {h.changes && h.action === "update" && (
-                            <pre className="mt-1 max-h-32 overflow-auto rounded-md bg-muted/60 p-2 text-xs">{JSON.stringify(JSON.parse(h.changes), null, 1)}</pre>
-                          )}
-                        </li>
-                      ))}
-                    </ol>
+                    <HistoryTimeline tenant={tenant} entries={history} />
                   </TabsContent>
                 )}
-              </Tabs>
+              </RecordTabs>
             )}
           </div>
           <aside className="space-y-4">

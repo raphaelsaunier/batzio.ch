@@ -52,6 +52,10 @@
             <SolidColorBrush x:Key="BzBorderBrush" Color="#FFDCE4EC" />
             <Color x:Key="BzInputColor">#FFD4DEE7</Color>
             <SolidColorBrush x:Key="BzInputBrush" Color="#FFD4DEE7" />
+            <Color x:Key="BzFieldColor">#FFFFFFFF</Color>
+            <SolidColorBrush x:Key="BzFieldBrush" Color="#FFFFFFFF" />
+            <Color x:Key="BzFieldReadonlyColor">#FFE7EEF5</Color>
+            <SolidColorBrush x:Key="BzFieldReadonlyBrush" Color="#FFE7EEF5" />
             <Color x:Key="BzRingColor">#FF5590CC</Color>
             <SolidColorBrush x:Key="BzRingBrush" Color="#FF5590CC" />
             <Color x:Key="BzChart1Color">#FF2863AB</Color>
@@ -187,6 +191,10 @@
             <SolidColorBrush x:Key="BzBorderBrush" Color="#FFDCE4EC" />
             <Color x:Key="BzInputColor">#FFD4DEE7</Color>
             <SolidColorBrush x:Key="BzInputBrush" Color="#FFD4DEE7" />
+            <Color x:Key="BzFieldColor">#FFFFFFFF</Color>
+            <SolidColorBrush x:Key="BzFieldBrush" Color="#FFFFFFFF" />
+            <Color x:Key="BzFieldReadonlyColor">#FFE7EEF5</Color>
+            <SolidColorBrush x:Key="BzFieldReadonlyBrush" Color="#FFE7EEF5" />
             <Color x:Key="BzRingColor">#FF5590CC</Color>
             <SolidColorBrush x:Key="BzRingBrush" Color="#FF5590CC" />
             <Color x:Key="BzChart1Color">#FF2863AB</Color>
@@ -322,6 +330,10 @@
             <SolidColorBrush x:Key="BzBorderBrush" Color="#17FFFFFF" />
             <Color x:Key="BzInputColor">#21FFFFFF</Color>
             <SolidColorBrush x:Key="BzInputBrush" Color="#21FFFFFF" />
+            <Color x:Key="BzFieldColor">#12FFFFFF</Color>
+            <SolidColorBrush x:Key="BzFieldBrush" Color="#12FFFFFF" />
+            <Color x:Key="BzFieldReadonlyColor">#2E000000</Color>
+            <SolidColorBrush x:Key="BzFieldReadonlyBrush" Color="#2E000000" />
             <Color x:Key="BzRingColor">#FF4C8BC5</Color>
             <SolidColorBrush x:Key="BzRingBrush" Color="#FF4C8BC5" />
             <Color x:Key="BzChart1Color">#FF5EACEB</Color>
@@ -415,6 +427,7 @@
     <x:Double x:Key="BzRadiusLg">14.4</x:Double>
     <x:Double x:Key="BzRadiusXl">18.4</x:Double>
     <x:Double x:Key="BzRadiusXxl">22.4</x:Double>
+    <x:Double x:Key="BzRadiusField">16</x:Double>
     <x:Double x:Key="BzRadiusPill">999</x:Double>
     <CornerRadius x:Key="BzCornerRadius">14.4</CornerRadius>
     <CornerRadius x:Key="BzCornerRadiusPill">999</CornerRadius>

@@ -13,7 +13,7 @@ public sealed record Preferences(
     string Mode = "simple",
     string Appearance = "system")
 {
-    public const string DefaultServer = "http://localhost:5173";
+    public const string DefaultServer = "https://www.batzio.ch";
 }
 
 /// <summary>Where the session token is kept (Windows Credential Locker in the app; memory in tests).</summary>

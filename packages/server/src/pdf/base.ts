@@ -1,4 +1,5 @@
 import { PDFDocument, type PDFFont, type PDFImage, type PDFPage, rgb, StandardFonts } from "pdf-lib";
+import { contentDisposition } from "../disposition";
 
 export const MM = 72 / 25.4;
 export const A4 = { width: 210 * MM, height: 297 * MM };
@@ -150,23 +151,35 @@ export class PdfWriter {
   }
 
   /** Adds "Page x / y" footers and an optional footer line on every page. */
-  finalizeFooters(footer?: string, label = "Page") {
+  /** Page footers: up to two lines bottom left (cut to fit), “Page n/m” bottom right. */
+  finalizeFooters(footer?: string | string[], label = "Page") {
     const total = this.pages.length;
+    const lines = (Array.isArray(footer) ? footer : footer ? [footer] : []).slice(0, 2);
     this.pages.forEach((p, i) => {
       if (this.noFooter.has(p)) return;
       const y = 12 * MM;
-      if (footer) {
-        p.drawText(sanitize(footer), { x: this.margin.left, y, size: 7, font: this.font, color: COLORS.muted });
-      }
       const pageLabel = `${label} ${i + 1}/${total}`;
+      const labelWidth = this.font.widthOfTextAtSize(pageLabel, 7);
+      lines.forEach((line, j) => {
+        const text = this.fit(sanitize(line), 7, this.contentWidth - labelWidth - 6 * MM);
+        p.drawText(text, { x: this.margin.left, y: y + (lines.length - 1 - j) * 9, size: 7, font: this.font, color: COLORS.muted });
+      });
       p.drawText(pageLabel, {
-        x: A4.width - this.margin.right - this.font.widthOfTextAtSize(pageLabel, 7),
+        x: A4.width - this.margin.right - labelWidth,
         y,
         size: 7,
         font: this.font,
         color: COLORS.muted,
       });
     });
+  }
+
+  /** The text, shortened with an ellipsis if it is wider than `maxWidth`. */
+  fit(text: string, size: number, maxWidth: number): string {
+    if (this.font.widthOfTextAtSize(text, size) <= maxWidth) return text;
+    let cut = text;
+    while (cut && this.font.widthOfTextAtSize(`${cut}…`, size) > maxWidth) cut = cut.slice(0, -1);
+    return `${cut.trimEnd()}…`;
   }
 
   async save(): Promise<Uint8Array> {
@@ -198,7 +211,7 @@ export function pdfResponse(bytes: Uint8Array, filename: string, inline = true):
   return new Response(bytes as BodyInit, {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `${inline ? "inline" : "attachment"}; filename="${filename.replace(/[^\w.-]+/g, "_")}"`,
+      "Content-Disposition": contentDisposition(filename, inline),
       "Cache-Control": "private, no-store",
     },
   });

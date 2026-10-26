@@ -257,7 +257,7 @@ private struct ChildRowEditor: View {
     }
 
     private func fillFromItem(_ id: Int) async {
-        guard let d: ItemDefaults? = try? await app.api.get("/app/items/\(id)/defaults", query: ["purchase": purchase ? "1" : nil]), let d else { return }
+        guard let d = try? await app.api.get("/app/items/\(id)/defaults", query: ["purchase": purchase ? "1" : nil]) as ItemDefaults else { return }
         row["text"] = .string(d.text)
         if let unit = d.unit_name { row["unit_name"] = .string(unit) }
         row["unit_price"] = .number(d.unit_price)

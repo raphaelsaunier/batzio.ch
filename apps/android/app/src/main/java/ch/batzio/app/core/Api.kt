@@ -53,6 +53,18 @@ class Api(
             .readTimeout(10, TimeUnit.MINUTES)
             .build()
         private val JSON = "application/json; charset=utf-8".toMediaType()
+
+        /** "Batzio-Android/0.1.0 (Android 16)": the audit log shows which app made a change. */
+        val USER_AGENT = "Batzio-Android/${ch.batzio.app.BuildConfig.VERSION_NAME} (Android ${android.os.Build.VERSION.RELEASE})"
+
+        /** The file name of a `Content-Disposition` header, preferring the exact UTF-8 one (`filename*=`). */
+        fun filenameFrom(header: String): String? {
+            Regex("filename\\*=UTF-8''([^;]+)", RegexOption.IGNORE_CASE).find(header)?.groupValues?.get(1)
+                ?.let { runCatching { java.net.URLDecoder.decode(it.replace("+", "%2B"), "UTF-8") }.getOrNull() }
+                ?.takeIf { it.isNotEmpty() }
+                ?.let { return it }
+            return Regex("filename=\"?([^\";]+)\"?").find(header)?.groupValues?.get(1)
+        }
     }
 
     fun url(path: String, query: Map<String, String?> = emptyMap()): HttpUrl {
@@ -68,17 +80,32 @@ class Api(
         Request.Builder().url(url(path, query)).apply {
             header("Accept", "application/json")
             header("Accept-Language", locale)
+            header("User-Agent", USER_AGENT)
             token?.let { header("Authorization", "Bearer $it") }
             tenant?.let { header("X-Tenant", it) }
         }
 
     private fun v1(path: String) = if (path.startsWith("/api/")) path else "/api/v1$path"
 
-    private suspend fun execute(request: Request): Response = withContext(Dispatchers.IO) {
+    /** On this device, requests go to the engine instead of the network. */
+    private val client: OkHttpClient get() = if (LocalEngine.isOnDevice(baseUrl)) LocalEngine.current().http else http
+
+    private suspend fun execute(original: Request): Response = withContext(Dispatchers.IO) {
+        // A write sent twice (a retry after a dropped connection) is answered once.
+        val request = if (original.method != "GET") original.newBuilder().header("Idempotency-Key", java.util.UUID.randomUUID().toString()).build() else original
         val response = try {
-            http.newCall(request).execute()
+            try {
+                client.newCall(request).execute()
+            } catch (e: IOException) {
+                if (request.method == "GET") throw e
+                // Safe to send again: the same key makes the server answer the first attempt.
+                kotlinx.coroutines.delay(1000)
+                client.newCall(request).execute()
+            }
         } catch (e: IOException) {
             throw ApiException(0, "offline", L("Batzio can’t be reached. Check your connection and the server address."))
+        } catch (e: IllegalStateException) {
+            throw ApiException(500, "local", e.message ?: L("Batzio could not start on this device."))
         }
         if (!response.isSuccessful) {
             val text = response.body.string()
@@ -113,7 +140,7 @@ class Api(
         return withContext(Dispatchers.IO) {
             response.use {
                 val disposition = it.header("Content-Disposition") ?: ""
-                val name = Regex("filename=\"?([^\";]+)\"?").find(disposition)?.groupValues?.get(1) ?: path.substringAfterLast('/')
+                val name = filenameFrom(disposition) ?: path.substringAfterLast('/')
                 Download(it.body.bytes(), name, it.header("Content-Type") ?: "application/octet-stream")
             }
         }

@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Batzio.Core;
 using Batzio.Core.Api;
+using Batzio.Core.Local;
 using Batzio.Core.Localization;
 using Batzio.Core.Models;
 using Batzio.Core.Session;
@@ -95,7 +96,11 @@ public sealed class AppState
             }
             await ReloadAsync();
         }
-        catch (ApiException e) when (e.IsUnauthorized) { SignOut(); }
+        catch (ApiException e) when (e.IsUnauthorized)
+        {
+            // On this device the session simply expired: open a new one.
+            if (!(IsOnDevice && await TrySignInOnDeviceAsync())) SignOut();
+        }
         catch (ApiException e) { Failure = e.Message; Phase = PhaseKind.Failed; Refresh(); }
     }
 
@@ -120,19 +125,81 @@ public sealed class AppState
     public async Task SignUpAsync(string name, string email, string password, string company, string language, bool demo) =>
         await SignedInAsync(await Api.SendAsync<AuthResult>("POST", "/auth/signup", Json.Obj(("name", name), ("email", email), ("password", password), ("company", company), ("language", language), ("demo", demo))));
 
-    public void SignOut()
+    public void SignOut() => SignOut(logout: true);
+
+    private void SignOut(bool logout)
     {
-        var api = Api;
-        _ = Task.Run(async () => { try { await api.SendAsync<JsonNode>("POST", "/auth/logout"); } catch (Exception) { } });
+        if (logout)
+        {
+            var api = Api;
+            _ = Task.Run(async () => { try { await api.SendAsync<JsonNode>("POST", "/auth/logout"); } catch (Exception) { } });
+        }
         _token = null;
         _secrets.Set("token", null);
-        Update(p => p with { Tenant = null, User = null, Companies = [] });
+        // The books stay on the device; “Continue on this device” opens them again.
+        var server = IsOnDevice ? Preferences.DefaultServer : Prefs.ServerUrl;
+        Update(p => p with { ServerUrl = server, Tenant = null, User = null, Companies = [] });
         Bootstrap = null;
         Selected = null;
         Reset(new Route.Home(new AppTarget("today"), ""));
         Batzi.Reset();
         Phase = PhaseKind.SignedOut;
         Refresh();
+    }
+
+    // ------------------------------------------------------------ on this device
+
+    /// <summary>The on-device account. Its password only unlocks the local session.</summary>
+    private const string DeviceEmail = "you@this-device.local";
+
+    public bool IsOnDevice => LocalEngine.IsOnDevice(Prefs.ServerUrl);
+    public string DeviceFolder => LocalEngine.DefaultDirectory();
+    public bool HasDeviceData => _secrets.Get("device-password") is not null && System.IO.File.Exists(Path.Combine(DeviceFolder, "control.sqlite"));
+
+    public async Task StartOnDeviceAsync(string name, string company, string language, bool demo)
+    {
+        Update(p => p with { ServerUrl = LocalEngine.Origin });
+        var password = _secrets.Get("device-password") ?? Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(24));
+        _secrets.Set("device-password", password);
+        try
+        {
+            await SignedInAsync(await Api.SendAsync<AuthResult>("POST", "/auth/signup", Json.Obj(("name", name), ("email", DeviceEmail), ("password", password), ("company", company), ("language", language), ("demo", demo))));
+        }
+        catch (ApiException)
+        {
+            Update(p => p with { ServerUrl = Preferences.DefaultServer });
+            throw;
+        }
+    }
+
+    public async Task ContinueOnDeviceAsync()
+    {
+        Update(p => p with { ServerUrl = LocalEngine.Origin });
+        if (!await TrySignInOnDeviceAsync())
+        {
+            Update(p => p with { ServerUrl = Preferences.DefaultServer });
+            throw new ApiException(0, "local", Localization.L("Batzio could not start on this device."));
+        }
+    }
+
+    private async Task<bool> TrySignInOnDeviceAsync()
+    {
+        if (_secrets.Get("device-password") is not { } password) return false;
+        try
+        {
+            await SignedInAsync(await Api.SendAsync<AuthResult>("POST", "/auth/login", Json.Obj(("email", DeviceEmail), ("password", password))));
+            return true;
+        }
+        catch (ApiException) { return false; }
+    }
+
+    /// <summary>Removes every company, document and file stored on this device.</summary>
+    public void DeleteEverythingOnDevice()
+    {
+        SignOut(logout: false);
+        LocalEngine.Shutdown();
+        try { Directory.Delete(DeviceFolder, recursive: true); } catch (IOException) { }
+        _secrets.Set("device-password", null);
     }
 
     public async Task ChooseAsync(Company company)
@@ -157,7 +224,10 @@ public sealed class AppState
             Phase = PhaseKind.Ready;
             Touch();
         }
-        catch (ApiException e) when (e.IsUnauthorized) { SignOut(); }
+        catch (ApiException e) when (e.IsUnauthorized)
+        {
+            if (!(IsOnDevice && await TrySignInOnDeviceAsync())) SignOut();
+        }
         catch (ApiException e)
         {
             if (Bootstrap is null) { Failure = e.Message; Phase = PhaseKind.Failed; Refresh(); } else Toast(e.Message, "danger");
@@ -347,9 +417,9 @@ public sealed class BatziModel(AppState app)
                         break;
                     case AgentEvent.Done d: reply.Refused = d.Refused; break;
                     case AgentEvent.Error err:
-                        reply.Text += err.Message == "no_agent"
-                            ? Localization.L("Batzi needs an Anthropic API key on the server before it can chat. Quick sentences and file drops still work.")
-                            : err.Message;
+                        reply.Text += err.Message != "no_agent" ? err.Message
+                            : app.IsOnDevice ? Localization.L("Batzi needs an internet connection. On this device, quick sentences and file drops still work.")
+                            : Localization.L("Batzi needs an Anthropic API key on the server before it can chat. Quick sentences and file drops still work.");
                         break;
                 }
                 Changed?.Invoke();

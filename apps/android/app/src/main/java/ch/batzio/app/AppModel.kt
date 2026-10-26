@@ -19,6 +19,7 @@ import ch.batzio.app.core.Company
 import ch.batzio.app.core.DropOutcome
 import ch.batzio.app.core.I18n
 import ch.batzio.app.core.L
+import ch.batzio.app.core.LocalEngine
 import ch.batzio.app.core.NavItem
 import ch.batzio.app.core.Preferences
 import ch.batzio.app.core.RecordRef
@@ -28,6 +29,10 @@ import ch.batzio.app.core.obj
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonElement
+import java.io.File
+
+/** The on-device account. Its password only unlocks the local session. */
+private const val DEVICE_EMAIL = "you@this-device.local"
 
 /** Session, company, navigation and everything screens share. */
 class AppModel(application: Application) : AndroidViewModel(application) {
@@ -50,7 +55,12 @@ class AppModel(application: Application) : AndroidViewModel(application) {
     val locale: String get() = prefs.locale ?: I18n.preferred()
     val tenantSlug: String get() = prefs.tenant ?: ""
     val isAccountant: Boolean get() = prefs.mode == "accountant"
-    val api: Api get() = Api(prefs.serverUrl, token, prefs.tenant, locale, prefs.mode)
+    val isOnDevice: Boolean get() = LocalEngine.isOnDevice(prefs.serverUrl)
+    val api: Api
+        get() {
+            if (isOnDevice) LocalEngine.get(getApplication())
+            return Api(prefs.serverUrl, token, prefs.tenant, locale, prefs.mode)
+        }
 
     init {
         I18n.load(application)
@@ -111,6 +121,8 @@ class AppModel(application: Application) : AndroidViewModel(application) {
             }
             reload()
         } catch (e: ApiException) {
+            // On this device the session simply expired: open a new one.
+            if (e.isUnauthorized && isOnDevice && runCatching { signInOnDevice() }.isSuccess) return
             if (e.isUnauthorized) signOut() else { failure = e.message; phase = Phase.Failed }
         }
     }
@@ -126,7 +138,9 @@ class AppModel(application: Application) : AndroidViewModel(application) {
                 tenant = result.companies.singleOrNull()?.slug,
             )
         }
-        if (prefs.tenant == null) phase = Phase.ChoosingCompany else { phase = Phase.Loading; reload() }
+        // The sign-in screen (and the coroutine scope that called us) leaves as soon as the phase
+        // changes, so the first load belongs to the model.
+        if (prefs.tenant == null) phase = Phase.ChoosingCompany else { phase = Phase.Loading; viewModelScope.launch { reload() } }
     }
 
     suspend fun signIn(email: String, password: String) {
@@ -142,13 +156,57 @@ class AppModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { runCatching { current.send<JsonElement>("POST", "/auth/logout") } }
         token = null
         store.token = null
-        update { it.copy(tenant = null, user = null, companies = emptyList()) }
+        // The books stay on the device; “Continue on this device” opens them again.
+        update { it.copy(serverUrl = if (isOnDevice) defaultServer else it.serverUrl, tenant = null, user = null, companies = emptyList()) }
         bootstrap = null
         selected = null
         resetStack(Home(AppTarget("today")))
         batzi.reset()
         phase = Phase.SignedOut
     }
+
+    // ------------------------------------------------------------ on this device
+
+    private val defaultServer get() = BuildConfig.DEFAULT_SERVER.ifEmpty { "https://www.batzio.ch" }
+    val deviceFolder: File get() = LocalEngine.defaultDirectory(getApplication())
+    val hasDeviceData: Boolean get() = store.devicePassword != null && File(deviceFolder, "control.sqlite").exists()
+
+    suspend fun startOnDevice(name: String, company: String, language: String, demo: Boolean) {
+        update { it.copy(serverUrl = LocalEngine.ORIGIN) }
+        val password = store.devicePassword ?: newDevicePassword().also { store.devicePassword = it }
+        try {
+            signedIn(api.send("POST", "/auth/signup", obj("name" to name, "email" to DEVICE_EMAIL, "password" to password, "company" to company, "language" to language, "demo" to demo)))
+        } catch (e: Exception) {
+            update { it.copy(serverUrl = defaultServer) }
+            throw e
+        }
+    }
+
+    suspend fun continueOnDevice() {
+        update { it.copy(serverUrl = LocalEngine.ORIGIN) }
+        try {
+            signInOnDevice()
+        } catch (e: Exception) {
+            update { it.copy(serverUrl = defaultServer) }
+            throw e
+        }
+    }
+
+    private suspend fun signInOnDevice() {
+        val password = store.devicePassword ?: throw ApiException(0, "local", L("Batzio could not start on this device."))
+        signedIn(api.send("POST", "/auth/login", obj("email" to DEVICE_EMAIL, "password" to password)))
+    }
+
+    /** Removes every company, document and file stored on this device. */
+    fun deleteEverythingOnDevice() {
+        signOut()
+        LocalEngine.shutdown()
+        deviceFolder.deleteRecursively()
+        store.devicePassword = null
+    }
+
+    private fun newDevicePassword(): String =
+        android.util.Base64.encodeToString(ByteArray(24).also { java.security.SecureRandom().nextBytes(it) }, android.util.Base64.NO_WRAP)
 
     fun choose(company: Company) {
         update { it.copy(tenant = company.slug) }
@@ -172,6 +230,7 @@ class AppModel(application: Application) : AndroidViewModel(application) {
             phase = Phase.Ready
             revision++
         } catch (e: ApiException) {
+            if (e.isUnauthorized && isOnDevice && runCatching { signInOnDevice() }.isSuccess) return
             if (e.isUnauthorized) signOut()
             else if (bootstrap == null) { failure = e.message; phase = Phase.Failed } else toast(e.message, "danger")
         }

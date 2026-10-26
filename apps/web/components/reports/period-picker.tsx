@@ -58,7 +58,7 @@ export function PeriodPicker({ mode = "range", from, to }: { mode?: "range" | "d
         }}
       >
         <span className="text-sm text-muted-foreground">As of</span>
-        <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} className="h-8 w-40 bg-background" />
+        <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} className="h-8 w-40" />
         <Button type="submit" size="sm" variant="outline">
           {t("Apply")}
         </Button>
@@ -79,7 +79,7 @@ export function PeriodPicker({ mode = "range", from, to }: { mode?: "range" | "d
           }
         }}
       >
-        <SelectTrigger className="h-8 w-40 bg-background">
+        <SelectTrigger className="h-8 w-40">
           <SelectValue placeholder={t("Custom period")} />
         </SelectTrigger>
         <SelectContent>
@@ -100,9 +100,9 @@ export function PeriodPicker({ mode = "range", from, to }: { mode?: "range" | "d
           apply(start, end);
         }}
       >
-        <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} className="h-8 w-40 bg-background" aria-label={t("From")} />
+        <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} className="h-8 w-40" aria-label={t("From")} />
         <span className="text-muted-foreground">–</span>
-        <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} className="h-8 w-40 bg-background" aria-label={t("To")} />
+        <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} className="h-8 w-40" aria-label={t("To")} />
         <Button type="submit" size="sm" variant="outline">
           {t("Apply")}
         </Button>

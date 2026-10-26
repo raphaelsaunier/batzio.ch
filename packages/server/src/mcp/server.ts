@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { CfWorkerJsonSchemaValidator } from "@modelcontextprotocol/sdk/validation/cfworker";
 import { runTool, toolkit } from "../agent/toolkit";
-import type { Ctx } from "../ctx";
+import { withProvenance, type Ctx } from "../ctx";
 import { toAppError } from "../errors";
 
 type ToolResult = { content: { type: "text"; text: string }[]; isError?: boolean };
@@ -31,7 +31,9 @@ export function createMcpServer(ctx: Ctx): McpServer {
       },
       async (args: Record<string, unknown>): Promise<ToolResult> => {
         try {
-          return { content: [{ type: "text", text: JSON.stringify(await runTool(ctx, tool, args), null, 2) }] };
+          // The audit log names the MCP client and tool behind every change.
+          const toolCtx = withProvenance(ctx, { mcp: true, mcp_client: server.server.getClientVersion()?.name, tool: tool.name });
+          return { content: [{ type: "text", text: JSON.stringify(await runTool(toolCtx, tool, args), null, 2) }] };
         } catch (error) {
           const e = toAppError(error);
           return { isError: true, content: [{ type: "text", text: `${e.code}: ${e.message}${e.fields ? ` ${JSON.stringify(e.fields)}` : ""}` }] };

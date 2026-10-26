@@ -49,6 +49,8 @@ export function payslipValues(employee: EmployeeRow, gross: number) {
       ktgRate: employee.ktg_rate,
       withholdingTaxRate: employee.withholding_tax_rate,
       childAllowance: employee.child_allowance,
+      // The salary the pension fund insures: twelve (or thirteen) monthly salaries; hourly wages extrapolated.
+      bvgAnnualSalary: employee.salary_type === "hourly" ? gross * 12 : employee.monthly_salary * (employee.thirteenth_salary ? 13 : 12),
     },
     DEFAULT_PAYROLL_RATES,
   );

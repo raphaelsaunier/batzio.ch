@@ -40,13 +40,13 @@ export function StatementImportForm({ tenant, banks }: { tenant: string; banks: 
     >
       <Field>
         <FieldLabel htmlFor="file">{t("Statement file")}</FieldLabel>
-        <Input id="file" name="file" type="file" accept=".xml,.camt,.csv,.txt" required className="bg-background" />
+        <Input id="file" name="file" type="file" accept=".xml,.camt,.csv,.txt" required />
         <FieldDescription>{t("ISO 20022 camt.053 / camt.054 (XML) from any Swiss bank, or CSV with date;amount;text;reference.")}</FieldDescription>
       </Field>
       <Field>
         <FieldLabel>{t("Bank account")}</FieldLabel>
         <Select value={bank} onValueChange={setBank}>
-          <SelectTrigger className="w-full bg-background">
+          <SelectTrigger className="w-full">
             <SelectValue placeholder={t("Detect from IBAN")} />
           </SelectTrigger>
           <SelectContent>
@@ -83,7 +83,7 @@ export function PaymentExportForm({ tenant, banks }: { tenant: string; banks: Ba
       <Field>
         <FieldLabel>{t("Debit account")}</FieldLabel>
         <Select value={bank} onValueChange={setBank}>
-          <SelectTrigger className="w-full bg-background">
+          <SelectTrigger className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

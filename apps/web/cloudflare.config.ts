@@ -28,6 +28,8 @@ export default defineConfig({
   worker: defineWorker(({ isPreview, mode }) => {
     // Previews (`pnpm deploy:preview`) bind their own databases and bucket.
     const preview = isPreview || mode === "preview";
+    // Only the production deploy has a fixed public address; dev and previews use the request's host.
+    const production = !preview && mode === "production";
     const slots = preview ? previewTenantDatabaseSlots : tenantDatabaseSlots;
     const d1 = (name: string) => bindings.d1(preview ? { name, id: PREVIEW_DATABASE_IDS[name] } : { name });
     return {
@@ -55,7 +57,7 @@ export default defineConfig({
         FILES: bindings.r2({ name: preview ? PREVIEW_FILES_BUCKET_NAME : FILES_BUCKET_NAME }),
         // One isolated database per tenant.
         ...Object.fromEntries(slots.map((slot) => [slot.binding, d1(slot.name)])),
-        ...(preview ? {} : { APP_URL: { type: "text" as const, value: PRODUCTION_URL } }),
+        ...(production ? { APP_URL: { type: "text" as const, value: PRODUCTION_URL } } : {}),
         // The shared demo account on the sign-in page (locally from .dev.vars).
         DEMO_LOGIN_EMAIL: bindings.secret(),
         DEMO_LOGIN_PASSWORD: bindings.secret(),

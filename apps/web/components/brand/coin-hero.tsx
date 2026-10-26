@@ -23,7 +23,7 @@ export function CoinHero({ suite, sweet }: { suite: string; sweet: string }) {
   return (
     <div className="flex flex-col items-center">
       <Coin onLanded={landed} />
-      <h1 className="coin-tagline font-display mt-14 text-5xl leading-[1.05] font-bold tracking-tight sm:text-7xl" data-phase={phase} aria-label={sweet}>
+      <h1 lang="en" className="coin-tagline font-display mt-14 text-5xl leading-[1.05] font-bold tracking-tight sm:text-7xl" data-phase={phase} aria-label={sweet}>
         <span className="coin-tagline-suite text-muted-foreground" aria-hidden>
           {suite}
           <span className="coin-tagline-strike" />

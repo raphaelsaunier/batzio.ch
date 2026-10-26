@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Calculator, Check, FileDown, Minus, Package, Pencil, Percent, Plus, Save, SeparatorHorizontal, Trash2, Type, Undo2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Calculator, Check, FileDown, Minus, Package, Pencil, Percent, Plus, QrCode, Save, SeparatorHorizontal, Trash2, Type, Undo2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import type { TaxOption } from "@/components/resource/positions-editor";
 import { RefSelect } from "@/components/resource/ref-select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { calculateDocument, type VatMode } from "@batzio/core/calc/documents";
 import { formatAmount, formatDate, formatDecimal } from "@batzio/core/format";
 import { useT } from "@batzio/i18n/react";
@@ -18,11 +19,13 @@ import { fromCents } from "@batzio/core/money";
 import type { ClientResource } from "@batzio/server/resources/client";
 import type { FieldDef } from "@batzio/server/resources/types";
 import { t as docLabel, type LabelKey } from "@batzio/server/pdf/i18n";
-import { formatIban, isValidIban } from "@batzio/core/swiss/iban";
+import { isValidIban } from "@batzio/core/swiss/iban";
+import { automaticFooter, companyLine, contactLines, pageFooter } from "@batzio/server/pdf/lines";
 import type { QrBillData } from "@batzio/core/swiss/qr-bill";
 import { createScorReference } from "@batzio/core/swiss/references";
 import { cn } from "@/lib/utils";
 import { QrSlip } from "./qr-slip";
+import { BANK_FIELDS, FOOTER_FIELDS, LETTERHEAD_FIELDS, LogoField, SaveForAll, SettingsFields, useCompanyParts } from "./sheet-settings";
 
 /**
  * The document editor *is* the printout: an A4 sheet laid out with the same
@@ -45,12 +48,16 @@ export interface SheetCompany {
   vat_number: string;
   accent_color: string;
   language: string;
+  document_footer: string;
 }
 
 export interface SheetBank {
   id: number;
+  name: string;
+  bank_name: string | null;
   iban: string | null;
   qr_iban: string | null;
+  bic: string | null;
 }
 
 export interface SheetContext {
@@ -68,6 +75,11 @@ export interface SheetContext {
   pdfHref?: string;
   /** Built-in intro/closing texts per document language. */
   defaults: Record<string, { header: string | null; footer: string | null }>;
+  /** May change the letterhead and footer (company settings) and the bank accounts. */
+  canEditSettings: boolean;
+  canEditBanks: boolean;
+  /** Translated settings fields for the letterhead, footer and bank panels. */
+  forms: { company: FieldDef[]; bank: FieldDef[] };
 }
 
 const SKIP = new Set(["id", "created_at", "updated_at", "created_by", "updated_by"]);
@@ -154,6 +166,9 @@ function Zone({
   className,
   style,
   side = "left",
+  panelClassName,
+  open: controlled,
+  onOpenChange,
 }: {
   label: string;
   editable: boolean;
@@ -162,9 +177,17 @@ function Zone({
   panel?: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
-  side?: "left" | "right";
+  side?: "left" | "right" | "top" | "bottom";
+  panelClassName?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [own, setOwn] = useState(false);
+  const open = controlled ?? own;
+  const setOpen = (next: boolean) => {
+    if (controlled === undefined) setOwn(next);
+    onOpenChange?.(next);
+  };
   if (!editable) return <div className={className} style={style}>{children}</div>;
   const body = (
     <div
@@ -183,7 +206,13 @@ function Zone({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{body}</PopoverTrigger>
-      <PopoverContent side={side} align="start" sideOffset={14} collisionPadding={12} className="neu-panel w-[22rem] space-y-3 p-4">
+      <PopoverContent
+        side={side}
+        align="start"
+        sideOffset={14}
+        collisionPadding={12}
+        className={cn("neu-panel max-h-(--radix-popover-content-available-height) w-[22rem] space-y-3 overflow-y-auto p-4", panelClassName)}
+      >
         <p className="font-display text-sm font-semibold">{label}</p>
         {panel}
       </PopoverContent>
@@ -367,14 +396,27 @@ export function DocumentSheet({
   const kind = sheet.kind;
   const showPrices = kind !== "delivery";
   const title = `${L(TITLE_KEY[kind] ?? "invoice")} ${sheet.nr ?? ""}`.trim();
-  const accent = /^#[0-9a-f]{6}$/i.test(sheet.company.accent_color) ? sheet.company.accent_color : "#2f5f8f";
-  const company = sheet.company;
-  const companyLine = [company.name + (company.legal_form && !company.name.endsWith(company.legal_form) ? ` ${company.legal_form}` : ""), [company.street, company.house_number].filter(Boolean).join(" "), [company.postcode, company.city].filter(Boolean).join(" ")]
-    .filter(Boolean)
-    .join(" · ");
-  const contactLines = [[company.street, company.house_number].filter(Boolean).join(" "), [company.postcode, company.city].filter(Boolean).join(" "), company.phone, company.email, company.website].filter(Boolean);
-  const bank = sheet.banks.find((b) => b.id === Number(values.bank_account_id)) ?? sheet.banks[0] ?? null;
-  const footerText = [companyLine, company.vat_number ? `UID ${company.vat_number}` : null, bank?.iban ? `IBAN ${formatIban(bank.iban)}` : null].filter(Boolean).join("   |   ");
+
+  // Letterhead, footer and bank account belong to the company: previewed here, saved to the settings.
+  const parts = useCompanyParts(tenant, sheet, values.bank_account_id ? Number(values.bank_account_id) : null, (id) => {
+    if (field("bank_account_id")) set("bank_account_id", id);
+  });
+  const company = parts.company;
+  const bank = parts.bank;
+  const accent = /^#[0-9a-f]{6}$/i.test(company.accent_color) ? company.accent_color : "#2f5f8f";
+  const sender = companyLine(company);
+  const letterLines = contactLines(company);
+  const footer = pageFooter(company, bank?.iban ?? null);
+  const ownsSettings = editable && sheet.canEditSettings;
+  const [zone, setZone] = useState<string | null>(null);
+  const zoneProps = (id: string) => ({
+    open: zone === id,
+    onOpenChange: (open: boolean) => {
+      setZone(open ? id : null);
+      if (!open) parts.discard();
+    },
+  });
+  const closeZone = () => setZone(null);
 
   const dueKey: LabelKey = kind === "quote" ? "due_quote" : kind === "invoice" || kind === "credit_note" ? "due_invoice" : "due_delivery";
   const meta: [string, string, string][] = [[L("date"), formatDate(toStr(values.date)), "date"]];
@@ -385,13 +427,30 @@ export function DocumentSheet({
   if (company.vat_number) meta.push([L("vat_no"), company.vat_number, ""]);
 
   // ---------------------------------------------------------------- QR-bill
+  // Whether there is a slip follows the saved settings, so a half-typed IBAN
+  // never pulls a panel's anchor away; what the slip shows follows the edits.
+  const qrDue = kind === "invoice" && !["cancelled", "paid", "written_off"].includes(sheet.status) && ["CHF", "EUR"].includes(currency);
+  const ibanFor = (b: SheetBank | null) => (b ? (sheet.qrReference && b.qr_iban ? b.qr_iban : b.iban) : null);
+  const payable = (b: SheetBank | null) => {
+    const iban = ibanFor(b);
+    return !!iban && isValidIban(iban);
+  };
+  /** Why an invoice that should carry a QR-bill does not (yet). */
+  const qrProblem = !qrDue
+    ? null
+    : !parts.savedBank
+      ? { text: t("Add a bank account to print the QR-bill."), part: "bank" }
+      : !payable(parts.savedBank)
+        ? { text: t("The bank account needs a valid IBAN for the QR-bill."), part: "bank" }
+        : !sheet.company.postcode || !sheet.company.city
+          ? { text: t("Add your postcode and city to the letterhead for the QR-bill."), part: "letterhead" }
+          : null;
+  const qrBank = payable(bank) ? bank : parts.savedBank;
+  const qrShown = qrDue && !qrProblem;
   const qr: QrBillData | null = useMemo(() => {
-    if (kind !== "invoice" || ["cancelled", "paid", "written_off"].includes(sheet.status)) return null;
-    if (!["CHF", "EUR"].includes(currency) || !bank || !company.postcode || !company.city) return null;
-    const useQrr = !!sheet.qrReference && !!bank.qr_iban;
-    const iban = useQrr ? bank.qr_iban! : bank.iban;
-    if (!iban || !isValidIban(iban)) return null;
-    let reference: string | null = useQrr ? sheet.qrReference : null;
+    const iban = ibanFor(qrBank);
+    if (!qrShown || !iban) return null;
+    let reference: string | null = sheet.qrReference && qrBank?.qr_iban ? sheet.qrReference : null;
     if (!reference && sheet.nr) {
       const body = sheet.nr.replace(/[^A-Za-z0-9]/g, "").slice(-21);
       if (body) reference = createScorReference(body);
@@ -406,7 +465,8 @@ export function DocumentSheet({
       reference,
       message: `${sheet.nr ?? ""}${values.title ? ` ${values.title}` : ""}`.trim().slice(0, 140),
     };
-  }, [kind, sheet.status, sheet.qrReference, sheet.nr, sheet.amountOpen, currency, bank, company, calc.total, contact, values.title]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qrShown, qrBank, sheet.status, sheet.qrReference, sheet.nr, sheet.amountOpen, currency, company, calc.total, contact, values.title]);
 
   // ------------------------------------------------------------ pagination
   const flowRef = useRef<HTMLDivElement>(null);
@@ -479,6 +539,51 @@ export function DocumentSheet({
 
   const panelProps = { tenant, labels, onLabels: setLabelsFor };
 
+  const letterheadPanel = (
+    <div className="space-y-3">
+      <LogoField tenant={tenant} logoUrl={sheet.logoUrl} />
+      <SettingsFields tenant={tenant} fields={sheet.forms.company} layout={LETTERHEAD_FIELDS} values={company} errors={parts.errors} onChange={parts.editCompany} />
+      <SaveForAll note={t("Applies to every document.")} pending={parts.pending} dirty={parts.dirty.company} onSave={() => parts.saveCompany(LETTERHEAD_FIELDS, closeZone)} />
+    </div>
+  );
+  const bankPanel = (
+    <div className="space-y-3">
+      {field("bank_account_id") && sheet.banks.length > 1 && (
+        <PanelField field={field("bank_account_id")} value={values.bank_account_id} onChange={(v) => set("bank_account_id", v)} {...panelProps} />
+      )}
+      {!bank?.id && <p className="text-muted-foreground text-xs">{t("No bank account yet. Add the one your customers should pay into.")}</p>}
+      <SettingsFields tenant={tenant} fields={sheet.forms.bank} layout={BANK_FIELDS} values={bank ?? {}} errors={parts.errors} onChange={parts.editBank} disabled={!sheet.canEditBanks} />
+      {sheet.canEditBanks && (
+        <SaveForAll
+          note={bank?.id ? t("Changes this account on every document.") : t("Adds it to your bank accounts.")}
+          pending={parts.pending}
+          dirty={parts.dirty.bank}
+          onSave={() => parts.saveBank(closeZone)}
+        />
+      )}
+    </div>
+  );
+  const footerPanel = (
+    <Tabs defaultValue="text" className="gap-3">
+      <TabsList className="w-full">
+        <TabsTrigger value="text">{t("Text")}</TabsTrigger>
+        <TabsTrigger value="bank">{t("Bank account")}</TabsTrigger>
+      </TabsList>
+      <TabsContent value="text" className="space-y-3">
+        <SettingsFields
+          tenant={tenant}
+          fields={sheet.forms.company.map((f) => (f.name === "document_footer" ? { ...f, placeholder: automaticFooter(company, bank?.iban ?? null) } : f))}
+          layout={FOOTER_FIELDS}
+          values={company}
+          errors={parts.errors}
+          onChange={parts.editCompany}
+        />
+        <SaveForAll note={t("Applies to every document.")} pending={parts.pending} dirty={parts.dirty.company} onSave={() => parts.saveCompany(FOOTER_FIELDS, closeZone)} />
+      </TabsContent>
+      <TabsContent value="bank">{bankPanel}</TabsContent>
+    </Tabs>
+  );
+
   return (
     <div className="space-y-4">
       <div ref={viewport} className="desk relative overflow-hidden rounded-3xl px-2 py-8 sm:py-12">
@@ -487,19 +592,44 @@ export function DocumentSheet({
             {/* Paper: one sheet per page, the content flows across them. */}
             <div className="relative" style={{ width: `${PAGE.width}mm` }}>
               {Array.from({ length: pages }, (_, i) => (
-                <div key={i} className="paper absolute left-0" style={{ top: `calc(${i * PAGE.height}mm + ${i * 24}px)`, width: `${PAGE.width}mm`, height: `${PAGE.height}mm` }} aria-hidden>
+                <div key={i} className="paper absolute left-0" style={{ top: `calc(${i * PAGE.height}mm + ${i * 24}px)`, width: `${PAGE.width}mm`, height: `${PAGE.height}mm` }}>
                   {i + 1 !== qrPage && (
-                    <div className="absolute flex justify-between" style={{ left: `${PAGE.left}mm`, right: `${PAGE.right}mm`, bottom: "12mm", fontSize: "7pt", color: "rgb(107,117,133)", lineHeight: 1 }}>
-                      <span className="truncate pr-4">{footerText}</span>
-                      <span className="shrink-0">
-                        {L("page")} {i + 1}/{pages}
-                      </span>
-                    </div>
+                    <Zone
+                      label={t("Footer")}
+                      editable={ownsSettings}
+                      side="top"
+                      className="absolute z-10"
+                      style={{ left: `${PAGE.left}mm`, right: `${PAGE.right}mm`, bottom: "12mm" }}
+                      panel={footerPanel}
+                      panelClassName="w-[26rem]"
+                      {...zoneProps(`footer-${i}`)}
+                    >
+                      <div className="flex items-end justify-between" style={{ fontSize: "7pt", color: "rgb(107,117,133)", lineHeight: 1 }}>
+                        <div className="grid min-w-0 pr-4" style={{ rowGap: "2pt" }}>
+                          {footer.map((line, j) => (
+                            <span key={j} className="truncate">
+                              {line}
+                            </span>
+                          ))}
+                        </div>
+                        <span className="shrink-0">
+                          {L("page")} {i + 1}/{pages}
+                        </span>
+                      </div>
+                    </Zone>
                   )}
                   {i + 1 === qrPage && qr && (
-                    <div className="absolute inset-x-0 bottom-0">
+                    <Zone
+                      label={t("Bank account")}
+                      editable={editable && sheet.canEditBanks}
+                      side="top"
+                      className="absolute inset-x-0 bottom-0 z-10"
+                      panel={bankPanel}
+                      panelClassName="w-[26rem]"
+                      {...zoneProps("qr")}
+                    >
                       <QrSlip data={qr} lang={lang} />
-                    </div>
+                    </Zone>
                   )}
                 </div>
               ))}
@@ -507,19 +637,30 @@ export function DocumentSheet({
               <article className="sheet relative" style={{ width: `${PAGE.width}mm`, minHeight: `${PAGE.height}mm`, color: "rgb(31,38,51)", ["--accent" as string]: accent }}>
                 {/* Letterhead */}
                 <div className="absolute inset-x-0 top-0" style={{ height: "4pt", background: accent }} />
-                {sheet.logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={sheet.logoUrl} alt="" className="absolute object-contain object-left-top" style={{ left: `${PAGE.left}mm`, top: "13mm", maxWidth: "60mm", maxHeight: "14mm" }} />
-                ) : (
-                  <p className="absolute" style={{ left: `${PAGE.left}mm`, top: "18mm", fontSize: "15pt", fontWeight: 700, color: accent, lineHeight: 1 }}>
-                    {company.name || t("Your company")}
-                  </p>
-                )}
-                <div className="absolute text-right" style={{ right: `${PAGE.right}mm`, top: "18mm", fontSize: "8pt", lineHeight: "10pt", color: "rgb(107,117,133)" }}>
-                  {contactLines.map((l) => (
-                    <p key={l}>{l}</p>
-                  ))}
-                </div>
+                <Zone
+                  label={t("Letterhead")}
+                  editable={ownsSettings}
+                  side="bottom"
+                  className="absolute"
+                  style={{ left: `${PAGE.left}mm`, right: `${PAGE.right}mm`, top: "13mm", height: "24mm" }}
+                  panel={letterheadPanel}
+                  panelClassName="w-[28rem]"
+                  {...zoneProps("letterhead")}
+                >
+                  {sheet.logoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={sheet.logoUrl} alt="" className="absolute top-0 left-0 object-contain object-left-top" style={{ maxWidth: "60mm", maxHeight: "14mm" }} />
+                  ) : (
+                    <p className="absolute left-0" style={{ top: "5mm", fontSize: "15pt", fontWeight: 700, color: accent, lineHeight: 1 }}>
+                      {company.name || t("Your company")}
+                    </p>
+                  )}
+                  <div className="absolute right-0 text-right" style={{ top: "5mm", fontSize: "8pt", lineHeight: "10pt", color: "rgb(107,117,133)" }}>
+                    {letterLines.map((l) => (
+                      <p key={l}>{l}</p>
+                    ))}
+                  </div>
+                </Zone>
 
                 {/* Address window (Swiss right-window envelope) */}
                 <Zone
@@ -551,7 +692,7 @@ export function DocumentSheet({
                   }
                 >
                   <p className="border-b" style={{ fontSize: "6.5pt", color: "rgb(107,117,133)", lineHeight: 1, display: "inline-block", borderColor: "rgb(107,117,133)", borderBottomWidth: "0.3pt", paddingBottom: "1pt" }}>
-                    {companyLine}
+                    {sender}
                   </p>
                   <div style={{ marginTop: `${6 * PT_PER_MM}pt`, fontSize: "10pt", lineHeight: "12pt", whiteSpace: "pre-line" }}>
                     {toStr(values.address)
@@ -909,6 +1050,23 @@ export function DocumentSheet({
                   <div className={cn("sheet-optional", !values.footer && "sheet-optional-empty")} data-editable={editable || undefined} style={{ marginTop: "10pt" }}>
                     <Inline label={field("footer")?.label ?? "Closing"} value={toStr(values.footer)} onChange={(v) => set("footer", v)} editable={editable} multiline placeholder={t("Add a closing text…")} style={{ fontSize: "9pt", lineHeight: 1.35 }} />
                   </div>
+
+                  {/* Never printed: why the QR-bill is missing, and where to fix it. */}
+                  {editable && qrProblem && (
+                    <Zone
+                      label={t("QR-bill")}
+                      editable={qrProblem.part === "bank" ? sheet.canEditBanks : sheet.canEditSettings}
+                      side="top"
+                      style={{ marginTop: "10pt" }}
+                      panel={qrProblem.part === "bank" ? bankPanel : letterheadPanel}
+                      panelClassName={qrProblem.part === "bank" ? "w-[26rem]" : "w-[28rem]"}
+                      {...zoneProps("qr-missing")}
+                    >
+                      <p className="sheet-hint flex items-center gap-1.5" style={{ fontSize: "8pt", fontFamily: "var(--font-sans)", padding: "4pt 0" }}>
+                        <QrCode className="size-3.5 shrink-0" /> {qrProblem.text}
+                      </p>
+                    </Zone>
+                  )}
                 </div>
 
                 {stamp && (
@@ -959,7 +1117,7 @@ export function DocumentSheet({
         <p className="font-display text-sm font-semibold">{t("Notes for you")}</p>
         <p className="text-muted-foreground mb-2 text-xs">{t("Never printed.")}</p>
         <textarea
-          className="border-input bg-background focus-visible:ring-ring/50 w-full resize-y rounded-lg border p-3 text-sm outline-none focus-visible:ring-3"
+          className="field focus-visible:border-ring focus-visible:ring-ring/50 w-full resize-y border p-3 text-sm outline-none focus-visible:ring-3"
           rows={2}
           disabled={!editable}
           value={toStr(values.notes)}

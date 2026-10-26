@@ -1,0 +1,18 @@
+{
+  "name": "@batzio/local",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Batzio's engine as a single script for the native apps' on-device mode: SQLite files and a folder instead of a server.",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/build.mjs --check",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@batzio/server": "workspace:*"
+  },
+  "devDependencies": {
+    "rolldown": "1.2.15"
+  }
+}

@@ -37,6 +37,9 @@ targets:
         buildPhase: resources
       - path: ../../packages/tokens/fonts/font/inter.ttf
         buildPhase: resources
+      # The engine for working on this device (packages/local, `pnpm gen`).
+      - path: ../../packages/local/bundle/batzio-local.js
+        buildPhase: resources
     dependencies:
       - package: BatzioKit
     entitlements:

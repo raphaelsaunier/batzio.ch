@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -26,6 +27,8 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.SmartToy
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -326,13 +329,7 @@ private fun RecordDetail(app: AppModel, res: ResourceSchema, id: Int, screen: Re
             }
             if (screen.files.isEmpty()) Text(L("Drop receipts or documents here to keep them with this record."), style = MaterialTheme.typography.bodySmall, color = LocalBz.current.mutedForeground)
         }
-        if (screen.history.isNotEmpty()) Column(Modifier.fillMaxWidth().neuCard(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            SectionTitle(L("History"))
-            screen.history.forEach { h ->
-                Text(h.summary ?: h.action)
-                Text("${h.actor_name ?: ""} · ${Fmt.dateTime(h.at)}", style = MaterialTheme.typography.bodySmall, color = LocalBz.current.mutedForeground)
-            }
-        }
+        if (screen.history.isNotEmpty()) HistorySection(app, screen.history, refresh)
         Spacer(Modifier.height(40.dp))
     }
 }
@@ -547,3 +544,65 @@ private fun ChildrenEditor(app: AppModel, child: ChildDef, rows: List<JsonObject
     }
 }
 
+/** A record's history in words: who (a person or software), from where, before → after, and undo. */
+@Composable
+private fun HistorySection(app: AppModel, entries: List<ch.batzio.app.core.HistoryEntry>, refresh: () -> Unit) {
+    val t = LocalBz.current
+    val scope = rememberCoroutineScope()
+    var undoing by remember { mutableStateOf<ch.batzio.app.core.HistoryEntry?>(null) }
+    Column(Modifier.fillMaxWidth().neuCard(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        SectionTitle(L("History"))
+        entries.forEach { h ->
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Icon(
+                    if (h.automated) Icons.Outlined.SmartToy else Icons.Outlined.Person,
+                    contentDescription = if (h.automated) L("Software") else L("Person"),
+                    tint = if (h.automated) t.primary else t.mutedForeground,
+                    modifier = Modifier.size(20.dp),
+                )
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(
+                        listOfNotNull(h.title ?: h.summary ?: h.action, h.actor?.name ?: h.actor_name, h.actor?.sourceLabel?.takeIf { it.isNotEmpty() }).joinToString(" · "),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Text(listOfNotNull(h.`when` ?: Fmt.dateTime(h.at), h.device).joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = t.mutedForeground)
+                    h.provenance.forEach { p -> Text(listOfNotNull(p.label, p.detail).joinToString(": "), style = MaterialTheme.typography.bodySmall, color = t.mutedForeground) }
+                    h.undo?.undoneBy?.let { Text(L("Undone in entry #{id}", "id" to it), style = MaterialTheme.typography.bodySmall, color = t.mutedForeground) }
+                    h.changes.take(6).forEach { c ->
+                        val line = when (c.kind) {
+                            "added" -> "+ ${c.to ?: ""}"
+                            "removed" -> "− ${c.from ?: ""}"
+                            else -> "${c.from ?: "–"} → ${c.to ?: "–"}"
+                        }
+                        Text("${c.label}: $line", style = MaterialTheme.typography.bodySmall, color = if (c.kind == "removed") t.destructive else t.foreground, maxLines = 2)
+                    }
+                    if (h.changes.size > 6) Text(L("Show all {n} changes", "n" to h.changes.size), style = MaterialTheme.typography.bodySmall, color = t.mutedForeground)
+                    if (h.undo?.possible == true) NeuButton(L("Undo"), { undoing = h }, compact = true)
+                }
+            }
+        }
+    }
+    undoing?.let { h ->
+        AlertDialog(
+            onDismissRequest = { undoing = null },
+            title = { Text(L("Undo this change?")) },
+            text = { Text(L("Puts the record back the way it was before this change (or removes what it created, or brings back what it deleted). Booked, issued or paid records are never rewritten.")) },
+            confirmButton = {
+                TextButton({
+                    undoing = null
+                    scope.launch {
+                        try {
+                            app.api.send<ActionResponse>("POST", "/audit_log/${h.id}/undo")
+                            app.toast(L("Change undone."))
+                            app.changed()
+                            refresh()
+                        } catch (e: Exception) {
+                            app.report(e)
+                        }
+                    }
+                }) { Text(L("Undo")) }
+            },
+            dismissButton = { TextButton({ undoing = null }) { Text(L("Cancel")) } },
+        )
+    }
+}

@@ -16,13 +16,14 @@ android {
         versionName = "0.1.0"
         // The emulator reaches the development machine's web server here.
         buildConfigField("String", "DEFAULT_SERVER", "\"http://10.0.2.2:5173\"")
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            buildConfigField("String", "DEFAULT_SERVER", "\"\"")
+            buildConfigField("String", "DEFAULT_SERVER", "\"https://www.batzio.ch\"")
         }
     }
 
@@ -38,6 +39,8 @@ android {
 
     // Brand fonts are shared by every app and live in packages/tokens.
     sourceSets.getByName("main").res.srcDir("../../../packages/tokens/fonts")
+    // The on-device engine (packages/local, `pnpm gen`).
+    sourceSets.getByName("main").assets.srcDir("../../../packages/local/bundle")
 }
 
 dependencies {
@@ -57,5 +60,9 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
+    // A current SQLite on every Android version (RETURNING, JSON functions), like D1.
+    implementation(libs.androidx.sqlite.bundled)
     testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.junit)
 }

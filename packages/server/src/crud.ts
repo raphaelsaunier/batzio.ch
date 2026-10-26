@@ -3,6 +3,7 @@ import { addDays, today } from "@batzio/core/format";
 import { fromCents, toCents } from "@batzio/core/money";
 import { coerceInput, fieldSchema, formatZodError, resourceSchema } from "./resources/schema";
 import type { ActionResult, ChildDef, FieldDef, ResourceDef, Row } from "./resources/types";
+import { flagDuplicates } from "./duplicates";
 import { auditStatement, diff, sealAuditLog } from "./audit";
 import { assertCan, type Ctx } from "./ctx";
 import { ident, placeholders, type Statement } from "./db/db";
@@ -487,6 +488,18 @@ export interface WriteOptions {
   raw?: boolean;
   auditAction?: string;
   auditSummary?: string;
+  /** Extra provenance for the audit entry. */
+  auditContext?: Record<string, unknown>;
+  /** The audit entry this write undoes. */
+  rollbackOf?: number;
+  /** Re-creates a record under its former id (undoing a deletion). */
+  keepId?: number;
+}
+
+/** Child rows as the audit log keeps them: everything but bookkeeping columns and the parent link. */
+function childSnapshot(child: ChildDef, rows: Row[] | undefined): Row[] {
+  const allowed = new Set(["id", ...child.fields.map((f) => f.name)]);
+  return (rows ?? []).map((r) => Object.fromEntries(Object.entries(r).filter(([k, v]) => allowed.has(k) && v !== undefined && k !== child.foreignKey)));
 }
 
 export async function createRecord(ctx: Ctx, res: ResourceDef, input: Row, opts: WriteOptions = {}): Promise<Row> {
@@ -505,6 +518,10 @@ export async function createRecord(ctx: Ctx, res: ResourceDef, input: Row, opts:
   columns.created_by = ctx.actor.name;
   columns.updated_by = ctx.actor.name;
   const cols = Object.keys(columns).filter((k) => allowed.has(k) && columns[k] !== undefined);
+  if (opts.keepId) {
+    columns.id = opts.keepId;
+    cols.unshift("id");
+  }
 
   const table = ident(res.table);
   const lastId = `(SELECT MAX(id) FROM ${table})`;
@@ -512,25 +529,31 @@ export async function createRecord(ctx: Ctx, res: ResourceDef, input: Row, opts:
     { sql: `INSERT INTO ${table} (${cols.map(ident).join(", ")}) VALUES (${placeholders(cols.length)})`, params: cols.map((c) => columns[c]) },
   ];
   for (const child of res.children ?? []) {
-    if (children[child.name]) statements.push(...childInserts(child, children[child.name], lastId, []));
+    if (children[child.name]) statements.push(...(opts.keepId ? childInserts(child, children[child.name], "?", [opts.keepId]) : childInserts(child, children[child.name], lastId, [])));
   }
-  const snapshot = Object.fromEntries(Object.entries(columns).filter(([k, v]) => v !== null && !k.endsWith("_by")));
+  const snapshot: Row = Object.fromEntries(Object.entries(columns).filter(([k, v]) => v !== null && !k.endsWith("_by") && k !== "id"));
+  for (const child of res.children ?? []) if (children[child.name]?.length) snapshot[child.name] = childSnapshot(child, children[child.name]);
   statements.push(
     auditStatement(ctx, {
       action: opts.auditAction ?? "create",
       resource: res.name,
-      resourceIdSql: `SELECT MAX(id) FROM ${table}`,
+      ...(opts.keepId ? { resourceId: opts.keepId } : { resourceIdSql: `SELECT MAX(id) FROM ${table}` }),
       summary: opts.auditSummary ?? `Created ${res.label.toLowerCase()} ${recordTitle(res, columns)}`,
       changes: snapshot,
+      context: opts.auditContext,
+      rollbackOf: opts.rollbackOf,
     }),
   );
   const results = await ctx.db.batch(statements);
-  const id = results[0].lastRowId;
+  const id = opts.keepId ?? results[0].lastRowId;
   await sealAuditLog(ctx).catch(() => undefined);
 
   const record = await getRecord(ctx, res, id);
   if (res.hooks?.afterWrite && !opts.raw) await res.hooks.afterWrite(ctx, record, null);
-  return res.hooks?.afterWrite && !opts.raw ? getRecord(ctx, res, id) : record;
+  const final = res.hooks?.afterWrite && !opts.raw ? await getRecord(ctx, res, id) : record;
+  // A possible copy of an earlier record is flagged for a person to decide; the creation itself goes through.
+  if (!opts.keepId) await flagDuplicates(ctx, res.name, final);
+  return final;
 }
 
 export async function updateRecord(ctx: Ctx, res: ResourceDef, id: number, input: Row, opts: WriteOptions = {}): Promise<Row> {
@@ -568,7 +591,8 @@ export async function updateRecord(ctx: Ctx, res: ResourceDef, id: number, input
     statements.push({ sql: `DELETE FROM ${ident(child.table)} WHERE ${ident(child.foreignKey)} = ?`, params: [id] });
     const keep = new Set(((existing[child.name] as Row[] | undefined) ?? []).map((r) => Number(r.id)));
     statements.push(...childInserts(child, children[child.name], "?", [id], keep));
-    changes[child.name] = { from: `${(existing[child.name] as Row[] | undefined)?.length ?? 0} rows`, to: `${children[child.name].length} rows` };
+    // Whole rows, so the history can show what was added, removed or changed, and undo it.
+    changes[child.name] = { from: childSnapshot(child, existing[child.name] as Row[] | undefined), to: childSnapshot(child, children[child.name]) };
   }
   statements.push(
     auditStatement(ctx, {
@@ -577,6 +601,8 @@ export async function updateRecord(ctx: Ctx, res: ResourceDef, id: number, input
       resourceId: id,
       summary: opts.auditSummary ?? `Updated ${res.label.toLowerCase()} ${recordTitle(res, { ...existing, ...columns })}`,
       changes,
+      context: opts.auditContext,
+      rollbackOf: opts.rollbackOf,
     }),
   );
   await ctx.db.batch(statements);
@@ -593,12 +619,13 @@ export async function updateRecord(ctx: Ctx, res: ResourceDef, id: number, input
 export async function deleteRecord(ctx: Ctx, res: ResourceDef, id: number, opts: WriteOptions = {}): Promise<void> {
   if (!opts.trusted) assertCan(ctx, res.area, "write");
   if (res.readOnly || (res.noDelete && !opts.trusted)) throw new AppError("forbidden", "{resource} cannot be deleted.", undefined, { resource: res.labelPlural });
-  const existing = await getRecord(ctx, res, id, false);
+  // With its child rows: the audit log keeps the whole record, so a deletion can be undone.
+  const existing = await getRecord(ctx, res, id, true);
   const title = recordTitle(res, existing);
   if (res.softDelete) {
     await ctx.db.batch([
       { sql: `UPDATE ${ident(res.table)} SET archived_at = ?, updated_at = ?, updated_by = ? WHERE id = ?`, params: [new Date().toISOString(), new Date().toISOString(), ctx.actor.name, id] },
-      auditStatement(ctx, { action: "archive", resource: res.name, resourceId: id, summary: `Archived ${res.label.toLowerCase()} ${title}` }),
+      auditStatement(ctx, { action: opts.auditAction ?? "archive", resource: res.name, resourceId: id, summary: `Archived ${res.label.toLowerCase()} ${title}`, context: opts.auditContext, rollbackOf: opts.rollbackOf }),
     ]);
   } else {
     if (res.hooks?.beforeDelete) await res.hooks.beforeDelete(ctx, existing);
@@ -606,19 +633,19 @@ export async function deleteRecord(ctx: Ctx, res: ResourceDef, id: number, opts:
     if (lock && !opts.force) throw new AppError("locked", lock);
     await ctx.db.batch([
       { sql: `DELETE FROM ${ident(res.table)} WHERE id = ?`, params: [id] },
-      auditStatement(ctx, { action: "delete", resource: res.name, resourceId: id, summary: `Deleted ${res.label.toLowerCase()} ${title}`, changes: existing }),
+      auditStatement(ctx, { action: opts.auditAction ?? "delete", resource: res.name, resourceId: id, summary: `Deleted ${res.label.toLowerCase()} ${title}`, changes: existing, context: opts.auditContext, rollbackOf: opts.rollbackOf }),
     ]);
   }
   await sealAuditLog(ctx).catch(() => undefined);
 }
 
-export async function restoreRecord(ctx: Ctx, res: ResourceDef, id: number): Promise<Row> {
+export async function restoreRecord(ctx: Ctx, res: ResourceDef, id: number, opts: Pick<WriteOptions, "auditAction" | "auditContext" | "rollbackOf"> = {}): Promise<Row> {
   assertCan(ctx, res.area, "write");
   if (!res.softDelete) throw new AppError("validation", "{resource} cannot be restored.", undefined, { resource: res.labelPlural });
   const existing = await getRecord(ctx, res, id, false);
   await ctx.db.batch([
     { sql: `UPDATE ${ident(res.table)} SET archived_at = NULL, updated_at = ?, updated_by = ? WHERE id = ?`, params: [new Date().toISOString(), ctx.actor.name, id] },
-    auditStatement(ctx, { action: "restore", resource: res.name, resourceId: id, summary: `Restored ${res.label.toLowerCase()} ${recordTitle(res, existing)}` }),
+    auditStatement(ctx, { action: opts.auditAction ?? "restore", resource: res.name, resourceId: id, summary: `Restored ${res.label.toLowerCase()} ${recordTitle(res, existing)}`, context: opts.auditContext, rollbackOf: opts.rollbackOf }),
   ]);
   await sealAuditLog(ctx).catch(() => undefined);
   return getRecord(ctx, res, id);

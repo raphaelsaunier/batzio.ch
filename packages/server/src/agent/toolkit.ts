@@ -7,6 +7,7 @@ import { bestMatch, categorize } from "../quick/autopilot";
 import { getResource, listResources } from "../resources/registry";
 import type { ResourceDef, Row } from "../resources/types";
 import { accountIdByNumber } from "../accounting";
+import { setCompanyLogo } from "../admin";
 import { importStatements, parseCamt, parseCsv } from "../banking";
 import { audit } from "../audit";
 import { inviteMember } from "../control";
@@ -672,13 +673,8 @@ const TOOLS: AgentTool[] = [
     description: "Uses an uploaded image (PNG or JPEG, by file_id) as the logo on all documents.",
     input: z.object({ file_id: z.number().int() }),
     run: async (ctx, { file_id }) => {
-      assertCan(ctx, "settings", "write");
-      const { row } = await readFile(ctx, Number(file_id));
-      if (!/^image\/(png|jpe?g)$/.test(row.mime_type ?? "")) throw new AppError("validation", "The logo must be a PNG or JPEG image.");
-      await attachFile(ctx, row.id, "settings", 0);
-      await saveSettings(ctx, "company", { logo_file_id: row.id });
-      await audit(ctx, { action: "update", resource: "settings", summary: `Logo set to ${row.name}` });
-      return { logo_file_id: row.id };
+      await setCompanyLogo(ctx, Number(file_id));
+      return { logo_file_id: Number(file_id) };
     },
   },
   {

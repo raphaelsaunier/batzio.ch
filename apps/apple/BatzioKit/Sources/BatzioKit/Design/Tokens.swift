@@ -51,6 +51,10 @@ public extension Color {
     static let bzBorder = Color.bzDynamic(light: (0.8681, 0.893, 0.9223, 1), dark: (1, 1, 1, 0.09))
     /// oklch(0.895 0.016 248) · dark oklch(1 0 0 / 13%)
     static let bzInput = Color.bzDynamic(light: (0.8395, 0.8677, 0.9011, 1), dark: (1, 1, 1, 0.13))
+    /// oklch(1 0 0) · dark oklch(1 0 0 / 7%)
+    static let bzField = Color.bzDynamic(light: (1, 1, 1, 1), dark: (1, 1, 1, 0.07))
+    /// oklch(0.945 0.012 248) · dark oklch(0 0 0 / 18%)
+    static let bzFieldReadonly = Color.bzDynamic(light: (0.9098, 0.9313, 0.9567, 1), dark: (0, 0, 0, 0.18))
     /// oklch(0.64 0.11 250) · dark oklch(0.62 0.11 248)
     static let bzRing = Color.bzDynamic(light: (0.3874, 0.5606, 0.7819, 1), dark: (0.3568, 0.5393, 0.7539, 1))
     /// oklch(0.5 0.13 255) · dark oklch(0.72 0.12 245)
@@ -106,6 +110,7 @@ public enum BZRadius {
     public static let lg: CGFloat = 14.4
     public static let xl: CGFloat = 18.4
     public static let xxl: CGFloat = 22.4
+    public static let field: CGFloat = 16
     public static let pill: CGFloat = 999
 }
 

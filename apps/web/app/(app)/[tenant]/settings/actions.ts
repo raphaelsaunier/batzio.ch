@@ -11,6 +11,7 @@ import {
   revokeCompanyApiKey,
   saveSequence,
   saveSettingsGroup,
+  setCompanyLogo,
   type SettingsGroup,
 } from "@batzio/server/admin";
 import { errorText, toAppError } from "@batzio/server/errors";
@@ -29,6 +30,18 @@ export async function saveSettingsAction(tenant: string, group: SettingsGroup, v
     await saveSettingsGroup(await tenantCtx(tenant), group, values);
     revalidatePath(`/${tenant}`, "layout");
     return { ok: true, message: (await getT())("Settings saved.") };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/** Uses an uploaded image as the logo on every document, or removes it (`null`). */
+export async function setLogoAction(tenant: string, fileId: number | null): Promise<ActionResponse> {
+  try {
+    await setCompanyLogo(await tenantCtx(tenant), fileId);
+    revalidatePath(`/${tenant}`, "layout");
+    const t = await getT();
+    return { ok: true, message: fileId ? t("Logo saved.") : t("Logo removed.") };
   } catch (e) {
     return fail(e);
   }

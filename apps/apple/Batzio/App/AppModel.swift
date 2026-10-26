@@ -1,4 +1,5 @@
 import BatzioKit
+import Security
 import SwiftUI
 #if os(macOS) && DEBUG
 import AppKit
@@ -52,7 +53,11 @@ final class AppModel {
     }
 
     var api: APIClient {
-        APIClient(baseURL: URL(string: prefs.serverURL) ?? URL(string: Preferences.defaultServer)!, token: token, tenant: prefs.tenant, locale: locale, mode: prefs.mode)
+        if prefs.isOnDevice {
+            let transport: any HTTPTransport = (try? localEngine()) ?? UnavailableEngine()
+            return APIClient(baseURL: LocalEngine.origin, token: token, tenant: prefs.tenant, locale: locale, mode: prefs.mode, transport: transport)
+        }
+        return APIClient(baseURL: URL(string: prefs.serverURL) ?? URL(string: Preferences.defaultServer)!, token: token, tenant: prefs.tenant, locale: locale, mode: prefs.mode)
     }
 
     init() {
@@ -149,6 +154,8 @@ final class AppModel {
             }
             await reload()
         } catch let error as APIError where error.isUnauthorized {
+            // On this device the session simply expired: open a new one.
+            if prefs.isOnDevice, (try? await signInOnDevice()) != nil { return }
             await signOut()
         } catch {
             phase = .failed(error.localizedDescription)
@@ -178,6 +185,8 @@ final class AppModel {
 
     func signOut() async {
         if token != nil { let _: JSONValue? = try? await api.send("POST", "/auth/logout") }
+        // The books stay on the device; “Continue on this device” opens them again.
+        if prefs.isOnDevice { prefs.serverURL = Preferences.defaultServer }
         token = nil
         Keychain.set(nil, for: "token")
         prefs.tenant = nil
@@ -188,6 +197,70 @@ final class AppModel {
         path = NavigationPath()
         batzi.reset()
         phase = .signedOut
+    }
+
+    // MARK: On this device
+
+    @ObservationIgnored private var engine: LocalEngine?
+
+    /// The on-device account. Its password only unlocks the local session and never leaves the keychain.
+    private static let deviceEmail = "you@this-device.local"
+
+    var hasDeviceData: Bool {
+        guard Keychain.get("device-password") != nil, let directory = try? LocalEngine.defaultDirectory() else { return false }
+        return FileManager.default.fileExists(atPath: directory.appendingPathComponent("control.sqlite").path)
+    }
+
+    var deviceFolder: URL? { try? LocalEngine.defaultDirectory() }
+
+    private func localEngine() throws -> LocalEngine {
+        if let engine { return engine }
+        guard let url = Bundle.main.url(forResource: "batzio-local", withExtension: "js") else { throw UnavailableEngine.error }
+        let created = try LocalEngine(directory: LocalEngine.defaultDirectory(), script: String(contentsOf: url, encoding: .utf8))
+        engine = created
+        return created
+    }
+
+    func startOnDevice(name: String, company: String, language: String, demo: Bool) async throws {
+        prefs.serverURL = LocalEngine.origin.absoluteString
+        let password = Keychain.get("device-password") ?? Self.newDevicePassword()
+        Keychain.set(password, for: "device-password")
+        let body: [String: JSONValue] = ["name": .string(name), "email": .string(Self.deviceEmail), "password": .string(password), "company": .string(company), "language": .string(language), "demo": .bool(demo)]
+        do {
+            let result: AuthResult = try await api.send("POST", "/auth/signup", body: body)
+            await signedIn(result)
+        } catch {
+            prefs.serverURL = Preferences.defaultServer
+            throw error
+        }
+    }
+
+    func continueOnDevice() async throws {
+        prefs.serverURL = LocalEngine.origin.absoluteString
+        do { try await signInOnDevice() } catch {
+            prefs.serverURL = Preferences.defaultServer
+            throw error
+        }
+    }
+
+    private func signInOnDevice() async throws {
+        guard let password = Keychain.get("device-password") else { throw UnavailableEngine.error }
+        let result: AuthResult = try await api.send("POST", "/auth/login", body: ["email": Self.deviceEmail, "password": password])
+        await signedIn(result)
+    }
+
+    /// Removes every company, document and file stored on this device.
+    func deleteEverythingOnDevice() async {
+        await signOut()
+        engine = nil
+        if let directory = deviceFolder { try? FileManager.default.removeItem(at: directory) }
+        Keychain.set(nil, for: "device-password")
+    }
+
+    private static func newDevicePassword() -> String {
+        var bytes = [UInt8](repeating: 0, count: 24)
+        _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        return Data(bytes).base64EncodedString()
     }
 
     func choose(_ company: Company) async {
@@ -217,6 +290,7 @@ final class AppModel {
             }
             #endif
         } catch let error as APIError where error.isUnauthorized {
+            if prefs.isOnDevice, (try? await signInOnDevice()) != nil { return }
             await signOut()
         } catch {
             phase = bootstrap == nil ? .failed(error.localizedDescription) : .ready
@@ -306,4 +380,10 @@ final class AppModel {
             await drop([UploadFile(name: url.lastPathComponent, mimeType: url.mimeType, data: data)])
         }
     }
+}
+
+/// Stands in for the engine when it cannot start, so every call explains why.
+private struct UnavailableEngine: HTTPTransport {
+    static var error: APIError { APIError(status: 0, code: "local", message: L("Batzio could not start on this device."), fields: nil) }
+    func send(_ request: URLRequest) async throws -> (Data, URLResponse) { throw Self.error }
 }

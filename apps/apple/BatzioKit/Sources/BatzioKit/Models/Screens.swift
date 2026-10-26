@@ -211,6 +211,40 @@ public struct HistoryEntry: Decodable, Hashable, Sendable, Identifiable {
     public let source: String
     public let action: String
     public let summary: String?
+    /// The change in words (older servers send only the fields above).
+    public let title: String?
+    public let when: String?
+    public let actor: HistoryActor?
+    public let provenance: [HistoryProvenance]?
+    public let device: String?
+    public let changes: [HistoryChange]?
+    public let undo: HistoryUndo?
+}
+
+public struct HistoryActor: Decodable, Hashable, Sendable {
+    public let name: String?
+    /// Batzi, an MCP client, an API script, an email or an import rather than a person.
+    public let automated: Bool
+    public let sourceLabel: String
+}
+
+public struct HistoryProvenance: Decodable, Hashable, Sendable {
+    public let label: String
+    public let detail: String?
+}
+
+public struct HistoryChange: Decodable, Hashable, Sendable {
+    public let field: String
+    public let label: String
+    /// "changed", "added" or "removed".
+    public let kind: String
+    public let from: String?
+    public let to: String?
+}
+
+public struct HistoryUndo: Decodable, Hashable, Sendable {
+    public let possible: Bool
+    public let undoneBy: Int?
 }
 
 public struct RecordScreen: Decodable, Sendable {

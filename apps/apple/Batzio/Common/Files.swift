@@ -141,7 +141,8 @@ struct DocumentScanner: UIViewControllerRepresentable {
     func updateUIViewController(_ controller: VNDocumentCameraViewController, context: Context) {}
     func makeCoordinator() -> Coordinator { Coordinator(parent: self) }
 
-    final class Coordinator: NSObject, VNDocumentCameraViewControllerDelegate {
+    /// VisionKit calls the delegate on the main thread.
+    @MainActor final class Coordinator: NSObject, @preconcurrency VNDocumentCameraViewControllerDelegate {
         let parent: DocumentScanner
         init(parent: DocumentScanner) { self.parent = parent }
 

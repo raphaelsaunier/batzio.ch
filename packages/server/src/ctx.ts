@@ -12,6 +12,11 @@ export interface Actor {
   source: Source;
   ip?: string | null;
   userAgent?: string | null;
+  /**
+   * Provenance recorded with every change: the Batzi conversation and tool, the MCP
+   * client, the API request, the quick sentence, the email, the import…
+   */
+  context?: Record<string, string | number | boolean | null>;
 }
 
 export interface TenantInfo {
@@ -45,6 +50,17 @@ export function assertCan(ctx: Ctx, area: Area, level: "read" | "write" = "read"
       ? new AppError("forbidden", "This API key is read-only.")
       : new AppError("forbidden", "Your role does not allow {level} access to {area}.", undefined, { level, area });
   }
+}
+
+/** The same context with more provenance for the audit log (merged into `actor.context`). */
+export function withProvenance(ctx: Ctx, context: Record<string, string | number | boolean | null | undefined>): Ctx {
+  const clean = Object.fromEntries(Object.entries(context).filter(([, v]) => v !== undefined && v !== "")) as Record<string, string | number | boolean | null>;
+  return { ...ctx, actor: { ...ctx.actor, context: { ...ctx.actor.context, ...clean } } };
+}
+
+/** Changes made by software rather than a person clicking: Batzi, MCP clients, API scripts, email, imports, Batzio itself. */
+export function isAutomated(source: string): boolean {
+  return source !== "ui" && source !== "app";
 }
 
 /** A system context for background jobs and seeding. */

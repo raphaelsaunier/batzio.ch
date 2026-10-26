@@ -53,7 +53,7 @@ export function FieldInput({
           aria-invalid={invalid}
           placeholder={field.placeholder}
           rows={compact ? 1 : 3}
-          className={cn("bg-background", compact && "min-h-7 resize-y py-1 text-xs")}
+          className={cn(compact && "min-h-7 resize-y py-1 text-xs")}
         />
       );
     case "json":
@@ -65,7 +65,7 @@ export function FieldInput({
           disabled={disabled}
           aria-invalid={invalid}
           rows={3}
-          className="bg-background font-mono text-xs"
+          className="font-mono text-xs"
           placeholder={field.description}
         />
       );
@@ -78,7 +78,7 @@ export function FieldInput({
     case "enum":
       return (
         <Select value={str || NONE} onValueChange={(v) => onChange(v === NONE ? null : v)} disabled={disabled}>
-          <SelectTrigger id={id} className={cn("w-full bg-background", size)} aria-invalid={invalid} size={compact ? "sm" : "default"}>
+          <SelectTrigger id={id} className={cn("w-full", size)} aria-invalid={invalid} size={compact ? "sm" : "default"}>
             <SelectValue placeholder={t("Select…")} />
           </SelectTrigger>
           <SelectContent>
@@ -133,16 +133,16 @@ export function FieldInput({
       );
     }
     case "date":
-      return <Input id={id} type="date" value={str.slice(0, 10)} onChange={(e) => onChange(e.target.value || null)} disabled={disabled} aria-invalid={invalid} className={cn("bg-background", size)} />;
+      return <Input id={id} type="date" value={str.slice(0, 10)} onChange={(e) => onChange(e.target.value || null)} disabled={disabled} aria-invalid={invalid} className={size} />;
     case "time":
-      return <Input id={id} type="time" value={str} onChange={(e) => onChange(e.target.value || null)} disabled={disabled} aria-invalid={invalid} className={cn("bg-background", size)} />;
+      return <Input id={id} type="time" value={str} onChange={(e) => onChange(e.target.value || null)} disabled={disabled} aria-invalid={invalid} className={size} />;
     case "datetime":
-      return <Input id={id} value={str ? new Date(str).toLocaleString("de-CH") : ""} disabled className={cn("bg-muted/40", size)} />;
+      return <Input id={id} value={str ? new Date(str).toLocaleString("de-CH") : ""} disabled className={size} />;
     case "color":
       return (
         <div className="flex gap-2">
           <Input type="color" value={str || "#2f5f8f"} onChange={(e) => onChange(e.target.value)} disabled={disabled} className="h-8 w-12 p-1" />
-          <Input id={id} value={str} onChange={(e) => onChange(e.target.value)} disabled={disabled} className="bg-background font-mono" />
+          <Input id={id} value={str} onChange={(e) => onChange(e.target.value)} disabled={disabled} className="font-mono" />
         </div>
       );
     case "int":
@@ -158,7 +158,7 @@ export function FieldInput({
           disabled={disabled}
           aria-invalid={invalid}
           placeholder={field.placeholder ?? (field.type === "money" ? "0.00" : undefined)}
-          className={cn("bg-background text-right num", size)}
+          className={cn("text-right num", size)}
         />
       );
     default:
@@ -172,7 +172,7 @@ export function FieldInput({
           aria-invalid={invalid}
           placeholder={field.placeholder}
           maxLength={field.maxLength}
-          className={cn("bg-background", field.type === "iban" && "font-mono", field.format === "code" && "font-mono", size)}
+          className={cn(field.type === "iban" && "font-mono", field.format === "code" && "font-mono", size)}
         />
       );
   }

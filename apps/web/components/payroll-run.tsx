@@ -36,7 +36,7 @@ export function PayrollRunForm({ tenant, year, month }: { tenant: string; year: 
       <Field className="w-auto">
         <FieldLabel>{t("Month")}</FieldLabel>
         <Select value={m} onValueChange={setM}>
-          <SelectTrigger className="w-40 bg-background">
+          <SelectTrigger className="w-40">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -51,7 +51,7 @@ export function PayrollRunForm({ tenant, year, month }: { tenant: string; year: 
       <Field className="w-auto">
         <FieldLabel>{t("Year")}</FieldLabel>
         <Select value={y} onValueChange={setY}>
-          <SelectTrigger className="w-28 bg-background">
+          <SelectTrigger className="w-28">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

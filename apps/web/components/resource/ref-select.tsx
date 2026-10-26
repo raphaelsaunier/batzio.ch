@@ -4,12 +4,15 @@ import { Check, ChevronsUpDown, X } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { refOptionsAction, type RefOption } from "@/app/(app)/[tenant]/actions";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { useT } from "@batzio/i18n/react";
+
+/** Pickers look like the other fields (flat, squircle), not like buttons. */
+const TRIGGER =
+  "field flex w-full min-w-0 items-center border px-2.5 text-left text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40";
 
 function useOptions(tenant: string, resource: string, filter?: Record<string, string | number | boolean>) {
   const [query, setQuery] = useState("");
@@ -73,18 +76,13 @@ export function RefSelect({
       }}
     >
       <PopoverTrigger asChild>
-        <Button
+        <button
           type="button"
-          variant="outline"
           role="combobox"
+          aria-expanded={open}
           disabled={disabled}
           aria-invalid={invalid}
-          className={cn(
-            "w-full justify-between bg-background px-2.5 font-normal",
-            compact && "h-7 text-xs",
-            !display && "text-muted-foreground",
-            className,
-          )}
+          className={cn(TRIGGER, "h-8 justify-between gap-1.5", compact && "h-7 text-xs", !display && "text-muted-foreground", className)}
         >
           <span className="truncate">{display ?? placeholder ?? t("Select…")}</span>
           <span className="flex items-center gap-1">
@@ -104,7 +102,7 @@ export function RefSelect({
             )}
             <ChevronsUpDown className="size-3.5 opacity-50" />
           </span>
-        </Button>
+        </button>
       </PopoverTrigger>
       <PopoverContent className="w-(--radix-popover-trigger-width) min-w-64 p-0" align="start">
         <Command shouldFilter={false}>
@@ -170,7 +168,7 @@ export function TagsSelect({
       }}
     >
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline" disabled={disabled} className="h-auto min-h-8 w-full justify-start gap-1 bg-background px-2 py-1 font-normal">
+        <button type="button" disabled={disabled} className={cn(TRIGGER, "min-h-8 justify-start gap-1 px-2 py-1")}>
           {value.length === 0 && <span className="text-muted-foreground">{t("Select…")}</span>}
           <span className="flex flex-wrap gap-1">
             {value.map((id) => (
@@ -179,7 +177,7 @@ export function TagsSelect({
               </Badge>
             ))}
           </span>
-        </Button>
+        </button>
       </PopoverTrigger>
       <PopoverContent className="w-64 p-0" align="start">
         <Command shouldFilter={false}>

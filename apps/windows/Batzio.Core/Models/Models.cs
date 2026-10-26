@@ -127,7 +127,30 @@ public sealed record TaxOption(int Id, string Code, double Rate, string Type);
 public sealed record RelatedRow(int Id, string Title, JsonNode? Status);
 public sealed record RelatedList(string Resource, string Label, string ForeignKey, int Total, List<RelatedRow> Rows);
 public sealed record Attachment(int Id, string Name, [property: JsonPropertyName("mime_type")] string? MimeType, long Size);
-public sealed record HistoryEntry(int Id, string At, [property: JsonPropertyName("actor_name")] string? ActorName, string Source, string Action, string? Summary);
+public sealed record HistoryEntry(
+    int Id,
+    string At,
+    [property: JsonPropertyName("actor_name")] string? ActorName,
+    string Source,
+    string Action,
+    string? Summary,
+    // The change in words (older servers send only the fields above).
+    string? Title = null,
+    string? When = null,
+    HistoryActor? Actor = null,
+    List<HistoryProvenance>? Provenance = null,
+    string? Device = null,
+    List<HistoryChange>? Changes = null,
+    HistoryUndo? Undo = null)
+{
+    /// <summary>Batzi, an MCP client, an API script, an email or an import rather than a person.</summary>
+    public bool Automated => Actor?.Automated ?? (Source != "ui" && Source != "app");
+}
+
+public sealed record HistoryActor(string? Name, bool Automated, string SourceLabel);
+public sealed record HistoryProvenance(string Label, string? Detail);
+public sealed record HistoryChange(string Field, string Label, string Kind, string? From, string? To);
+public sealed record HistoryUndo(bool Possible, int? UndoneBy);
 public sealed record RecordScreen(
     JsonObject Record,
     string Title,

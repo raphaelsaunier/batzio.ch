@@ -18,7 +18,7 @@ function RoleSelect({ value, onChange, disabled, exclude = [] }: { value: string
   const t = useT();
   return (
     <Select value={value} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger className="h-8 w-40 bg-background">
+      <SelectTrigger className="h-8 w-40">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
@@ -157,7 +157,7 @@ export function ApiKeyForm({ tenant, maxRole }: { tenant: string; maxRole: strin
         <Field className="w-auto">
           <FieldLabel>{t("Access")}</FieldLabel>
           <Select value={scope} onValueChange={(v) => setScope(v as "read" | "write")}>
-            <SelectTrigger className="h-8 w-36 bg-background">
+            <SelectTrigger className="h-8 w-36">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

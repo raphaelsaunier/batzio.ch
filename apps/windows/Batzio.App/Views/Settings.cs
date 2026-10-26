@@ -40,6 +40,25 @@ public sealed class SettingsView : UserControl
                 you.Children.Add(picker);
             }
             you.Children.Add(Ui.Button(L("Sign out"), () => state.SignOut()));
+            if (state.IsOnDevice)
+            {
+                Button? delete = null;
+                delete = Ui.Button(L("Delete everything on this device…"), async () =>
+                {
+                    var dialog = new ContentDialog
+                    {
+                        Title = L("Delete everything on this device…"),
+                        Content = L("This deletes every company, document and file stored on this device. It cannot be undone."),
+                        PrimaryButtonText = L("Delete everything"),
+                        CloseButtonText = L("Cancel"),
+                        DefaultButton = ContentDialogButton.Close,
+                        XamlRoot = delete!.XamlRoot,
+                    };
+                    if (await dialog.ShowAsync() == ContentDialogResult.Primary) state.DeleteEverythingOnDevice();
+                });
+                delete.Foreground = Ui.Brush("BzDestructiveBrush");
+                you.Children.Add(delete);
+            }
             page.Children.Add(Ui.Card(you));
 
             var inbox = Ui.Stack(10, Ui.Section(L("Batzi & inbox")), Ui.Muted(L("Everything here can also be set up by talking to Batzi or dropping a file.")));
@@ -53,7 +72,7 @@ public sealed class SettingsView : UserControl
                     await state.ReloadAsync();
                 }, compact: true));
             }
-            inbox.Children.Add(Ui.Muted("Batzi: " + (s.Agent ? L("Ready") : L("Needs an Anthropic API key on the server"))));
+            inbox.Children.Add(Ui.Muted("Batzi: " + (s.Agent ? L("Ready") : state.IsOnDevice ? L("Needs an internet connection") : L("Needs an Anthropic API key on the server"))));
             page.Children.Add(Ui.Card(inbox));
 
             var company = Ui.Stack(8, Ui.Section(L("Company")));
@@ -62,8 +81,12 @@ public sealed class SettingsView : UserControl
             Link(L("Accounting"), "accounting");
             Link(L("Document texts"), "texts");
             Link(L("Number formats"), "numbering");
-            if (state.Bootstrap?.Can("users") == true) Link(L("Users & roles"), "team");
-            Link(L("API & MCP"), "api");
+            // On this device there is nobody to invite and nothing to connect to.
+            if (!state.IsOnDevice)
+            {
+                if (state.Bootstrap?.Can("users") == true) Link(L("Users & roles"), "team");
+                Link(L("API & MCP"), "api");
+            }
             page.Children.Add(Ui.Card(company));
 
             var master = Ui.Stack(8, Ui.Section(L("Master data")));
@@ -72,7 +95,7 @@ public sealed class SettingsView : UserControl
             if (state.Bootstrap?.Resource("audit_log") is not null)
                 master.Children.Add(new HyperlinkButton { Content = L("Audit log"), Command = new RelayCommand(() => state.Push(new Route.List("audit_log"))) });
             page.Children.Add(Ui.Card(master));
-            page.Children.Add(Ui.Muted($"{L("Server")}: {state.Prefs.ServerUrl}", 12));
+            page.Children.Add(Ui.Muted(state.IsOnDevice ? $"{L("On this device")}: {state.DeviceFolder}" : $"{L("Server")}: {state.Prefs.ServerUrl}", 12));
             return Ui.Page(page);
         });
     }

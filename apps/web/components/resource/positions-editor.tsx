@@ -175,7 +175,7 @@ export function PositionsEditor({
                       placeholder={t("Description")}
                       rows={1}
                       disabled={disabled}
-                      className="min-h-8 resize-y bg-background py-1.5 text-sm"
+                      className="min-h-8 resize-y py-1.5 text-sm"
                     />
                     <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <Checkbox checked={!!row.is_optional} onCheckedChange={(v) => set(i, { is_optional: !!v })} disabled={disabled} className="size-3.5" />
@@ -183,15 +183,15 @@ export function PositionsEditor({
                     </label>
                   </div>
                   <div className="col-span-2 col-start-2 grid grid-cols-[4rem_4rem_5.5rem_3.5rem_minmax(6rem,1fr)] gap-2 xl:col-span-1 xl:col-start-auto xl:contents">
-                    <Input value={String(row.quantity ?? "")} onChange={(e) => set(i, { quantity: e.target.value })} inputMode="decimal" disabled={disabled} className="h-8 bg-background text-right num" aria-label="Quantity" />
-                    <Input value={String(row.unit_name ?? "")} onChange={(e) => set(i, { unit_name: e.target.value })} disabled={disabled} className="h-8 bg-background" aria-label={t("Unit")} />
-                    <Input value={String(row.unit_price ?? "")} onChange={(e) => set(i, { unit_price: e.target.value })} inputMode="decimal" placeholder="0.00" disabled={disabled} className="h-8 bg-background text-right num" aria-label="Unit price" />
-                    <Input value={String(row.discount_percent ?? "")} onChange={(e) => set(i, { discount_percent: e.target.value })} inputMode="decimal" placeholder="0" disabled={disabled} className="h-8 bg-background text-right num" aria-label={t("Discount")} />
+                    <Input value={String(row.quantity ?? "")} onChange={(e) => set(i, { quantity: e.target.value })} inputMode="decimal" disabled={disabled} className="h-8 text-right num" aria-label="Quantity" />
+                    <Input value={String(row.unit_name ?? "")} onChange={(e) => set(i, { unit_name: e.target.value })} disabled={disabled} className="h-8" aria-label={t("Unit")} />
+                    <Input value={String(row.unit_price ?? "")} onChange={(e) => set(i, { unit_price: e.target.value })} inputMode="decimal" placeholder="0.00" disabled={disabled} className="h-8 text-right num" aria-label="Unit price" />
+                    <Input value={String(row.discount_percent ?? "")} onChange={(e) => set(i, { discount_percent: e.target.value })} inputMode="decimal" placeholder="0" disabled={disabled} className="h-8 text-right num" aria-label={t("Discount")} />
                     <select
                       value={vatMode === "none" ? "" : String(row.tax_id ?? "")}
                       onChange={(e) => set(i, { tax_id: e.target.value ? Number(e.target.value) : null })}
                       disabled={disabled || vatMode === "none"}
-                      className="h-8 rounded-lg border border-input bg-background px-2 text-sm disabled:opacity-50"
+                      className="field h-8 border px-2 text-sm"
                       aria-label={t("VAT")}
                     >
                       <option value="">—</option>
@@ -213,7 +213,7 @@ export function PositionsEditor({
                   placeholder={t("Heading or text block")}
                   rows={1}
                   disabled={disabled}
-                  className="min-h-8 resize-y bg-background py-1.5 font-medium xl:col-span-7"
+                  className="min-h-8 resize-y py-1.5 font-medium xl:col-span-7"
                 />
               ) : type === "subtotal" ? (
                 <div className="flex justify-between pt-1.5 text-sm font-semibold xl:col-span-7">
@@ -222,9 +222,9 @@ export function PositionsEditor({
                 </div>
               ) : type === "discount" ? (
                 <div className="grid grid-cols-[minmax(0,1fr)_5rem_6.5rem_7rem] items-center gap-2 xl:col-span-7">
-                  <Input value={String(row.text ?? "")} onChange={(e) => set(i, { text: e.target.value })} placeholder={t("Discount")} disabled={disabled} className="h-8 bg-background" />
-                  <Input value={String(row.discount_percent ?? "")} onChange={(e) => set(i, { discount_percent: e.target.value, unit_price: "" })} placeholder="%" inputMode="decimal" disabled={disabled} className="h-8 bg-background text-right num" aria-label="Discount percent" />
-                  <Input value={String(row.unit_price ?? "")} onChange={(e) => set(i, { unit_price: e.target.value, discount_percent: "" })} placeholder="or amount" inputMode="decimal" disabled={disabled} className="h-8 bg-background text-right num" aria-label="Discount amount" />
+                  <Input value={String(row.text ?? "")} onChange={(e) => set(i, { text: e.target.value })} placeholder={t("Discount")} disabled={disabled} className="h-8" />
+                  <Input value={String(row.discount_percent ?? "")} onChange={(e) => set(i, { discount_percent: e.target.value, unit_price: "" })} placeholder="%" inputMode="decimal" disabled={disabled} className="h-8 text-right num" aria-label="Discount percent" />
+                  <Input value={String(row.unit_price ?? "")} onChange={(e) => set(i, { unit_price: e.target.value, discount_percent: "" })} placeholder="or amount" inputMode="decimal" disabled={disabled} className="h-8 text-right num" aria-label="Discount amount" />
                   <span className="text-right text-sm font-medium text-destructive num">{formatAmount(line?.total ?? 0)}</span>
                 </div>
               ) : (

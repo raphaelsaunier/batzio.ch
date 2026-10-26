@@ -280,8 +280,8 @@ fun InboxCard(app: AppModel) {
         Text(L("Drop receipts, bills, bank statements or spreadsheets anywhere in Batzio, or forward them by email."), color = LocalBz.current.mutedForeground)
         app.bootstrap?.inbox?.let { address ->
             Text(address, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
-            val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
-            NeuButton(L("Copy"), { clipboard.setText(androidx.compose.ui.text.AnnotatedString(address)); app.toast(L("Copied")) }, compact = true)
+            val copy = ch.batzio.app.ui.components.rememberCopy()
+            NeuButton(L("Copy"), { copy(address); app.toast(L("Copied")) }, compact = true)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             NeuButton(L("Choose files"), { pick.launch(arrayOf("*/*")) })

@@ -13,7 +13,10 @@ public struct Preferences: Codable, Sendable, Equatable {
     /// "system", "light" or "dark".
     public var appearance: String
 
-    public static let defaultServer = "http://localhost:5173"
+    public static let defaultServer = "https://www.batzio.ch"
+
+    /// Working without a server: the engine runs on this device (``LocalEngine``).
+    public var isOnDevice: Bool { serverURL == LocalEngine.origin.absoluteString }
 
     public init(serverURL: String = Preferences.defaultServer, tenant: String? = nil, user: UserInfo? = nil, companies: [Company] = [], locale: String? = nil, mode: String = "simple", appearance: String = "system") {
         self.serverURL = serverURL

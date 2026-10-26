@@ -288,7 +288,7 @@ export function LocalResourceList(props: LocalListProps) {
         </InputGroup>
         {filterFields.map((f) => (
           <Select key={f.name} value={filters[f.name] ?? ALL} onValueChange={(v) => setFilter(f.name, v === ALL ? null : v)}>
-            <SelectTrigger size="sm" className="h-8 min-w-32 bg-background">
+            <SelectTrigger size="sm" className="h-8 min-w-32">
               <Filter className="size-3.5 opacity-60" />
               <SelectValue placeholder={f.label} />
             </SelectTrigger>

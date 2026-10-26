@@ -4,6 +4,7 @@ import { audit } from "./audit";
 import { createApiKey, inviteMember, removeMember, renameTenant, revokeApiKey, setMemberRole } from "./control";
 import { assertCan, type Ctx } from "./ctx";
 import { inboxAddress, rotateInboxToken } from "./email/inbound";
+import { attachFile, readFile } from "./files";
 import { getEnv } from "./env";
 import { AppError } from "./errors";
 import { renderNumber } from "./numbering";
@@ -35,6 +36,11 @@ export const COMPANY_FIELDS: FieldDef[] = [
   f.string("commercial_register", "Commercial register no.", { span: 3 }),
   f.enum("language", "Default document language", LANGUAGE_OPTIONS, { span: 3 }),
   f.color("accent_color", "Accent colour", { span: 3 }),
+  f.text("document_footer", "Page footer", {
+    span: 6,
+    placeholder: "Muster GmbH · Bahnhofstrasse 1 · 8000 Zürich   |   UID CHE-123.456.789 MWST   |   IBAN CH93 0076 2011 6238 5295 7",
+    description: "Two lines at most, at the bottom of every page. Leave empty to print company, address, UID and IBAN.",
+  }),
 ];
 
 export const TEXT_LABELS: Record<keyof DocumentTexts, string> = {
@@ -85,6 +91,21 @@ export async function saveSettingsGroup(ctx: Ctx, group: SettingsGroup, values: 
   await saveSettings(ctx, group, clean as never);
   if (group === "company" && typeof clean.name === "string" && clean.name) await renameTenant(ctx.control, ctx.tenant.id, clean.name);
   await audit(ctx, { action: "update_settings", resource: "settings", resourceId: group, summary: `Updated ${group} settings`, changes: clean });
+}
+
+/** Puts an uploaded PNG or JPEG on every document as the logo, or removes it (`null`). */
+export async function setCompanyLogo(ctx: Ctx, fileId: number | null): Promise<void> {
+  assertCan(ctx, "settings", "write");
+  if (fileId === null) {
+    await saveSettings(ctx, "company", { logo_file_id: null });
+    await audit(ctx, { action: "update_settings", resource: "settings", resourceId: "company", summary: "Logo removed", changes: { logo_file_id: null } });
+    return;
+  }
+  const { row } = await readFile(ctx, fileId);
+  if (!/^image\/(png|jpe?g)$/.test(row.mime_type ?? "")) throw new AppError("validation", "The logo must be a PNG or JPEG image.");
+  await attachFile(ctx, row.id, "settings", 0);
+  await saveSettings(ctx, "company", { logo_file_id: row.id });
+  await audit(ctx, { action: "update_settings", resource: "settings", resourceId: "company", summary: `Logo set to ${row.name}`, changes: { logo_file_id: row.id } });
 }
 
 /** Sets a document number format; returns the next number it will produce. */

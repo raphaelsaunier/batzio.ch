@@ -99,9 +99,9 @@ final class BatziModel {
                     if let i = messages[index].tools.firstIndex(where: { $0.id == outcome.id }) { messages[index].tools[i] = outcome } else { messages[index].tools.append(outcome) }
                 case .done(let refused): messages[index].refused = refused
                 case .error(let message):
-                    messages[index].text += message == "no_agent"
-                        ? L("Batzi needs an Anthropic API key on the server before it can chat. Quick sentences and file drops still work.")
-                        : message
+                    messages[index].text += message != "no_agent" ? message
+                        : app.prefs.isOnDevice ? L("Batzi needs an internet connection. On this device, quick sentences and file drops still work.")
+                        : L("Batzi needs an Anthropic API key on the server before it can chat. Quick sentences and file drops still work.")
                 }
             }
         } catch {

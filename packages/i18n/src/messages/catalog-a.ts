@@ -46,7 +46,6 @@ export const ROWS: CatalogRow[] = [
   ["Accountant goggles", "Buchhalter-Brille", "Lunettes de comptable", "Occhiali da contabile"],
   ["Accounting", "Buchhaltung", "Comptabilité", "Contabilità"],
   ["Accounting & VAT", "Buchhaltung & MWST", "Comptabilité & TVA", "Contabilità & IVA"],
-  ["Accounting, Sweet!", "Buchhaltung? Süss!", "La compta ? Trop mignonne !", "Contabilità? Che dolcezza!"],
   ["Action", "Aktion", "Action", "Azione"],
   ["Action failed.", "Aktion fehlgeschlagen.", "L’action a échoué.", "Azione non riuscita."],
   ["Active", "Aktiv", "Actif", "Attivo"],

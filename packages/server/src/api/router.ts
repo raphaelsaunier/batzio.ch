@@ -30,6 +30,7 @@ import { getEnv } from "../env";
 import { buildOpenApi } from "./openapi";
 import { matchOperation } from "./operations";
 import { toMajorUnits } from "./units";
+import { withIdempotency } from "../idempotency";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -107,6 +108,22 @@ function parseId(raw: string): number {
 
 /** Entry point for /api/v1/*. */
 export async function handleApi(request: Request, segments: string[]): Promise<Response> {
+  try {
+    return await withIdempotency(request, () => route(request, segments));
+  } catch (error) {
+    return errorResponse(request, error);
+  }
+}
+
+function errorResponse(request: Request, error: unknown): Response {
+  const e = toAppError(error);
+  // Messages follow the caller's language (Accept-Language or ?locale=); English otherwise.
+  const body = e.toJSON();
+  body.error.message = errorText(e, tFor(requestLocale(request)));
+  return json(body, e.status, e.code === "unauthorized" ? { "WWW-Authenticate": 'Bearer realm="batzio"' } : {});
+}
+
+async function route(request: Request, segments: string[]): Promise<Response> {
   const url = new URL(request.url);
   const method = request.method.toUpperCase();
   try {
@@ -207,10 +224,6 @@ export async function handleApi(request: Request, segments: string[]): Promise<R
     }
     throw new AppError("not_found", `Method ${method} is not supported on /api/v1/${segments.join("/")}.`);
   } catch (error) {
-    const e = toAppError(error);
-    // Messages follow the caller's language (Accept-Language or ?locale=); English otherwise.
-    const body = e.toJSON();
-    body.error.message = errorText(e, tFor(requestLocale(request)));
-    return json(body, e.status, e.code === "unauthorized" ? { "WWW-Authenticate": 'Bearer realm="batzio"' } : {});
+    return errorResponse(request, error);
   }
 }

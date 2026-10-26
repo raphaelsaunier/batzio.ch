@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Brand } from "@/components/brand";
 import { LocaleSwitcher } from "@/components/i18n/locale-switcher";
+import { ExperimentBanner } from "@/components/shell/experiment-banner";
 import { getT } from "@/lib/i18n/server";
 import { N_ } from "@batzio/i18n";
+import { shareMetadata } from "@/lib/share";
 
 const POINTS = [
   N_("Drop a bill, a receipt or a bank statement — Batzi books it"),
@@ -11,6 +14,9 @@ const POINTS = [
   N_("Projects, time tracking and Swiss payroll"),
   N_("English, Deutsch, Français, Italiano"),
 ];
+
+/** Shared links to sign-in and sign-up show the demo company. */
+export const generateMetadata = (): Promise<Metadata> => shareMetadata("demo");
 
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
   const t = await getT();
@@ -27,7 +33,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
           <Brand tone="inverted" />
         </Link>
         <div className="relative mt-auto max-w-md space-y-6">
-          <h2 className="font-display text-3xl leading-tight font-bold tracking-tight">{t("Accounting, Sweet!")}</h2>
+          <h2 lang="en" className="font-display text-3xl leading-tight font-bold tracking-tight">Accounting, Sweet!</h2>
           <ul className="space-y-3 text-sm text-white/85">
             {POINTS.map((p) => (
               <li key={p} className="flex gap-3">
@@ -39,9 +45,12 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
           <p className="text-xs text-white/60">{t("Every company runs on its own isolated database.")}</p>
         </div>
       </aside>
-      <main className="relative flex items-center justify-center px-4 py-10 sm:px-10">
-        <LocaleSwitcher compact className="absolute top-4 right-4" />
-        <div className="w-full max-w-md">{children}</div>
+      <main className="relative flex flex-col">
+        <ExperimentBanner />
+        <div className="relative flex flex-1 items-center justify-center px-4 py-10 sm:px-10">
+          <LocaleSwitcher compact className="absolute top-4 right-4" />
+          <div className="w-full max-w-md">{children}</div>
+        </div>
       </main>
     </div>
   );

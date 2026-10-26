@@ -1,7 +1,7 @@
 import { calculateDocument } from "@batzio/core/calc/documents";
 import { formatAmount, formatDate, formatDecimal } from "@batzio/core/format";
 import { fromCents } from "@batzio/core/money";
-import { formatIban, isValidIban } from "@batzio/core/swiss/iban";
+import { isValidIban } from "@batzio/core/swiss/iban";
 import type { QrBillData } from "@batzio/core/swiss/qr-bill";
 import { createScorReference } from "@batzio/core/swiss/references";
 import type { Ctx } from "../ctx";
@@ -11,6 +11,7 @@ import type { PDFImage } from "pdf-lib";
 import { readFile } from "../files";
 import { A4, brandColors, COLORS, embedImage, MM, PdfWriter } from "./base";
 import { t, type LabelKey } from "./i18n";
+import { companyLine, contactLines, pageFooter } from "./lines";
 import { drawQrBill, QR_SLIP_HEIGHT } from "./qr-bill";
 
 interface BankRow {
@@ -19,10 +20,10 @@ interface BankRow {
   bank_name: string | null;
 }
 
-function companyLine(c: CompanySettings): string {
-  return [c.name + (c.legal_form && !c.name.endsWith(c.legal_form) ? ` ${c.legal_form}` : ""), [c.street, c.house_number].filter(Boolean).join(" "), [c.postcode, c.city].filter(Boolean).join(" ")]
-    .filter(Boolean)
-    .join(" · ");
+/** The document's bank account, or the default one when it names none. */
+async function bankFor(ctx: Ctx, id: number | null | undefined): Promise<BankRow | null> {
+  const own = id ? await ctx.db.first<BankRow>("SELECT iban, qr_iban, bank_name FROM bank_accounts WHERE id = ?", id) : null;
+  return own ?? (await ctx.db.first<BankRow>("SELECT iban, qr_iban, bank_name FROM bank_accounts ORDER BY is_default DESC, id LIMIT 1"));
 }
 
 type Brand = ReturnType<typeof brandColors> & { logo: PDFImage | null };
@@ -52,14 +53,7 @@ function letterhead(w: PdfWriter, company: CompanySettings, address: string, bra
   } else {
     w.text(company.name || "Company", left, 18 * MM, { size: 15, bold: true, color: brand.accent });
   }
-  const contact = [
-    [company.street, company.house_number].filter(Boolean).join(" "),
-    [company.postcode, company.city].filter(Boolean).join(" "),
-    company.phone,
-    company.email,
-    company.website,
-  ].filter(Boolean) as string[];
-  contact.forEach((line, i) => w.text(line, A4.width - w.margin.right, 18 * MM + i * 10, { size: 8, align: "right", color: COLORS.muted }));
+  contactLines(company).forEach((line, i) => w.text(line, A4.width - w.margin.right, 18 * MM + i * 10, { size: 8, align: "right", color: COLORS.muted }));
 
   // Swiss right-window envelope: address field starts ~118 mm from the left, 50 mm from the top.
   const ax = 118 * MM;
@@ -85,16 +79,6 @@ function metaTable(w: PdfWriter, rows: [string, string][], y: number) {
   return Math.ceil(rows.length / 2) * 12;
 }
 
-function footerLine(company: CompanySettings, bank: BankRow | null): string {
-  return [
-    companyLine(company),
-    company.vat_number ? `UID ${company.vat_number}` : null,
-    bank?.iban ? `IBAN ${formatIban(bank.iban)}` : null,
-  ]
-    .filter(Boolean)
-    .join("   |   ");
-}
-
 function debtorFromContact(contact: ContactRow | null) {
   if (!contact || !contact.postcode || !contact.city) return null;
   return {
@@ -109,9 +93,7 @@ function debtorFromContact(contact: ContactRow | null) {
 
 async function qrData(ctx: Ctx, doc: DocumentRow, amountCents: number, company: CompanySettings, contact: ContactRow | null): Promise<QrBillData | null> {
   if (!["CHF", "EUR"].includes(doc.currency_code)) return null;
-  const bank = doc.bank_account_id
-    ? await ctx.db.first<BankRow>("SELECT iban, qr_iban, bank_name FROM bank_accounts WHERE id = ?", doc.bank_account_id)
-    : await ctx.db.first<BankRow>("SELECT iban, qr_iban, bank_name FROM bank_accounts ORDER BY is_default DESC, id LIMIT 1");
+  const bank = await bankFor(ctx, doc.bank_account_id);
   if (!bank || !company.postcode || !company.city) return null;
   const useQrr = !!doc.qr_reference && !!bank.qr_iban;
   const iban = useQrr ? bank.qr_iban! : bank.iban;
@@ -155,7 +137,7 @@ export async function renderDocumentPdf(ctx: Ctx, doc: DocumentRow): Promise<Uin
     loadContact(ctx, doc.contact_id),
     loadContact(ctx, doc.contact_person_id),
   ]);
-  const bank = await ctx.db.first<BankRow>("SELECT iban, qr_iban, bank_name FROM bank_accounts ORDER BY is_default DESC, id LIMIT 1");
+  const bank = await bankFor(ctx, doc.bank_account_id);
   const titleText = `${t(lang, TITLE_KEY[doc.kind] ?? "invoice")} ${doc.nr ?? ""}`.trim();
   const w = await PdfWriter.create({ title: titleText, author: company.name });
   const left = w.margin.left;
@@ -329,7 +311,7 @@ export async function renderDocumentPdf(ctx: Ctx, doc: DocumentRow): Promise<Uin
     }
   }
 
-  w.finalizeFooters(footerLine(company, bank), t(lang, "page"));
+  w.finalizeFooters(pageFooter(company, bank?.iban ?? null), t(lang, "page"));
   return w.save();
 }
 
@@ -348,7 +330,7 @@ export interface ReminderRow {
 export async function renderReminderPdf(ctx: Ctx, reminder: ReminderRow, doc: DocumentRow): Promise<Uint8Array> {
   const lang = doc.language || "de";
   const [company, contact] = await Promise.all([getSettings(ctx, "company"), loadContact(ctx, doc.contact_id)]);
-  const bank = await ctx.db.first<BankRow>("SELECT iban, qr_iban, bank_name FROM bank_accounts ORDER BY is_default DESC, id LIMIT 1");
+  const bank = await bankFor(ctx, doc.bank_account_id);
   const title = reminder.title ?? `${t(lang, "reminder")} ${doc.nr ?? ""}`;
   const w = await PdfWriter.create({ title, author: company.name });
   const left = w.margin.left;
@@ -391,6 +373,6 @@ export async function renderReminderPdf(ctx: Ctx, reminder: ReminderRow, doc: Do
     if (w.y > A4.height - QR_SLIP_HEIGHT - 8 * MM) w.addPage();
     drawQrBill(w, data, lang);
   }
-  w.finalizeFooters(footerLine(company, bank), t(lang, "page"));
+  w.finalizeFooters(pageFooter(company, bank?.iban ?? null), t(lang, "page"));
   return w.save();
 }

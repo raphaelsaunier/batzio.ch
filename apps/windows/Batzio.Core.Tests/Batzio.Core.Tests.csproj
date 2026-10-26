@@ -9,6 +9,10 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <!-- So the on-device engine tests also run on macOS and Linux. -->
+    <PackageReference Include="Microsoft.ClearScript.V8.Native.osx-arm64" Version="7.5.1.1" />
+    <PackageReference Include="Microsoft.ClearScript.V8.Native.osx-x64" Version="7.5.1.1" />
+    <PackageReference Include="Microsoft.ClearScript.V8.Native.linux-x64" Version="7.5.1.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Batzio.Core\Batzio.Core.csproj" />

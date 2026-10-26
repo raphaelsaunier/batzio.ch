@@ -65,7 +65,7 @@ export function ListToolbar({
           value={params.get(f.name) ?? ALL}
           onValueChange={(v) => push((p) => (v === ALL ? p.delete(f.name) : p.set(f.name, v)))}
         >
-          <SelectTrigger size="sm" className="h-8 min-w-32 bg-background">
+          <SelectTrigger size="sm" className="h-8 min-w-32">
             <Filter className="size-3.5 opacity-60" />
             <SelectValue placeholder={f.label} />
           </SelectTrigger>
@@ -91,7 +91,7 @@ export function ListToolbar({
           value={params.get("archived") ?? ALL}
           onValueChange={(v) => push((p) => (v === ALL ? p.delete("archived") : p.set("archived", v)))}
         >
-          <SelectTrigger size="sm" className="h-8 bg-background">
+          <SelectTrigger size="sm" className="h-8">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

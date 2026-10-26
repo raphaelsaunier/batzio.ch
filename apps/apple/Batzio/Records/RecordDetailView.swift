@@ -96,16 +96,7 @@ private struct RecordDetailContent: View {
                 }
                 attachments
                 if !screen.history.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        SectionTitle(text: L("History"))
-                        ForEach(screen.history) { h in
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(h.summary ?? h.action).font(.bzBody(14))
-                                Text("\(h.actor_name ?? "") · \(Fmt.dateTime(h.at))").font(.bzBody(12)).foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                    .neuCard()
+                    HistorySection(entries: screen.history, refresh: refresh)
                 }
             }
             .padding(24)

@@ -147,6 +147,20 @@ export async function getNudges(ctx: Ctx, base: string, locale: Locale): Promise
     }
   }
 
+  if (canCtx(ctx, "audit", "read")) {
+    const duplicates = await ctx.db.value<number>("SELECT count(*) FROM duplicates WHERE status = 'open'");
+    if (duplicates) {
+      out.push({
+        key: "duplicates",
+        icon: "Copy",
+        tone: "warning",
+        title: msg("{n} possible duplicates", { n: duplicates }),
+        text: msg("The same receipt, bill or contact seems to be in Batzio twice. Merge, remove or keep both."),
+        actions: [{ kind: "link", label: msg("Review them"), href: `${base}/duplicates?status=open`, primary: true }],
+      });
+    }
+  }
+
   if (canCtx(ctx, "projects", "read")) {
     const unbilled = await ctx.db.first<{ minutes: number; value: number }>(
       `SELECT coalesce(sum(t.duration_minutes),0) AS minutes,

@@ -817,4 +817,41 @@ CREATE TABLE calendar_years (
 );
 `,
   },
+  {
+    id: 4,
+    name: "audit_provenance_and_duplicates",
+    sql: `
+-- Where a change came from (Batzi conversation and tool, MCP client, API request,
+-- quick sentence, email, import) and which change it undoes. Rows from version 2
+-- seal both into the hash chain; version 1 rows keep verifying as before.
+ALTER TABLE audit_log ADD COLUMN context TEXT;
+ALTER TABLE audit_log ADD COLUMN rollback_of INTEGER;
+ALTER TABLE audit_log ADD COLUMN hash_version INTEGER NOT NULL DEFAULT 1;
+CREATE INDEX audit_log_rollback ON audit_log(rollback_of);
+
+-- Retried requests (Idempotency-Key) replay the first answer instead of acting twice.
+CREATE TABLE idempotency_keys (
+  key TEXT PRIMARY KEY,
+  method TEXT NOT NULL,
+  path TEXT NOT NULL,
+  status INTEGER NOT NULL,
+  body TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT ${NOW}
+);
+
+-- Records that look like a copy of an earlier one (same receipt twice, same supplier bill,
+-- same customer entered twice), until someone merges, removes or dismisses them.
+CREATE TABLE duplicates (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  resource TEXT NOT NULL,
+  record_id INTEGER NOT NULL,
+  original_id INTEGER NOT NULL,
+  reason TEXT NOT NULL,
+  score INTEGER NOT NULL DEFAULT 100,
+  status TEXT NOT NULL DEFAULT 'open',${STAMPS},
+  UNIQUE (resource, record_id, original_id)
+);
+CREATE INDEX duplicates_status ON duplicates(status);
+`,
+  },
 ];

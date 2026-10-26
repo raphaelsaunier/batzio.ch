@@ -146,3 +146,11 @@ fun openFile(context: Context, bytes: ByteArray, name: String, mime: String) {
         context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType(mime).putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), name))
     }
 }
+
+/** Copies text to the clipboard (the platform clipboard API is asynchronous). */
+@Composable
+fun rememberCopy(): (String) -> Unit {
+    val clipboard = androidx.compose.ui.platform.LocalClipboard.current
+    val scope = rememberCoroutineScope()
+    return { text -> scope.launch { clipboard.setClipEntry(androidx.compose.ui.platform.ClipEntry(android.content.ClipData.newPlainText("Batzio", text))) } }
+}

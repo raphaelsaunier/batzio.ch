@@ -2,8 +2,10 @@ import BatzioKit
 import SwiftUI
 
 struct WelcomeView: View {
+    enum Tab: Hashable { case signIn, signUp, device }
+
     @Environment(AppModel.self) private var app
-    @State private var signingUp = false
+    @State private var tab: Tab = .signIn
 
     var body: some View {
         ScrollView {
@@ -16,24 +18,33 @@ struct WelcomeView: View {
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: 440)
+                    ExperimentNotice()
+                        .frame(maxWidth: 440)
                 }
                 .padding(.top, 24)
 
                 VStack(spacing: 16) {
-                    Picker("", selection: $signingUp) {
-                        Text(L("Sign in")).tag(false)
-                        Text(L("Create account")).tag(true)
+                    Picker("", selection: $tab) {
+                        Text(L("Sign in")).tag(Tab.signIn)
+                        Text(L("Create account")).tag(Tab.signUp)
+                        Text(L("On this device")).tag(Tab.device)
                     }
                     .pickerStyle(.segmented)
                     .labelsHidden()
-                    if signingUp { SignUpForm() } else { SignInForm() }
+                    switch tab {
+                    case .signIn: SignInForm()
+                    case .signUp: SignUpForm()
+                    case .device: DeviceForm()
+                    }
                 }
                 .padding(24)
                 .neuCard(padding: 0)
                 .frame(maxWidth: 440)
 
-                ServerField()
-                    .frame(maxWidth: 440)
+                if tab != .device {
+                    ServerField()
+                        .frame(maxWidth: 440)
+                }
             }
             .padding(24)
             .frame(maxWidth: .infinity)
@@ -113,6 +124,76 @@ private struct SignUpForm: View {
             }
             .buttonStyle(.metal)
             .disabled(busy || name.isEmpty || email.isEmpty || password.count < 10 || company.isEmpty)
+        }
+    }
+}
+
+/// Batzio is an experiment, not a product to trust with real books.
+struct ExperimentNotice: View {
+    var body: some View {
+        Label {
+            Text("\(Text(L("Batzio is a vibe-coding experiment.")).bold()) \(L("Don’t use it for real data — and please don’t sue us."))")
+        } icon: {
+            Image(systemName: "flask").foregroundStyle(Color.bzWarning)
+        }
+        .font(.bzBody(12))
+        .foregroundStyle(.primary.opacity(0.8))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(Color.bzWarning.opacity(0.16), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+}
+
+/// Works without a server: SQLite files on this device, no account, no internet.
+private struct DeviceForm: View {
+    @Environment(AppModel.self) private var app
+    @State private var name = ""
+    @State private var company = ""
+    @State private var language = I18n.locale == "en" ? "de" : I18n.locale
+    @State private var demo = true
+    @State private var error: String?
+    @State private var busy = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label {
+                Text(L("Everything stays on this device: no account and no internet needed. Batzi, the assistant, needs a connection and is off here."))
+            } icon: {
+                Image(systemName: "internaldrive")
+            }
+            .font(.bzBody(13))
+            .foregroundStyle(.secondary)
+            if app.hasDeviceData {
+                Button { run { try await app.continueOnDevice() } } label: {
+                    HStack { if busy { ProgressView().controlSize(.small) }; Text(L("Continue on this device")) }.frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.metal)
+                .disabled(busy)
+            } else {
+                TextField(L("Your name"), text: $name).textContentType(.name).textFieldStyle(.roundedBorder)
+                TextField(L("Company name"), text: $company).textContentType(.organizationName).textFieldStyle(.roundedBorder)
+                Picker(L("Document language"), selection: $language) {
+                    Text("Deutsch").tag("de")
+                    Text("Français").tag("fr")
+                    Text("Italiano").tag("it")
+                    Text("English").tag("en")
+                }
+                Toggle(L("Start with demo data"), isOn: $demo)
+                Button { run { try await app.startOnDevice(name: name, company: company, language: language, demo: demo) } } label: {
+                    HStack { if busy { ProgressView().controlSize(.small) }; Text(L("Start on this device")) }.frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.metal)
+                .disabled(busy || name.trimmingCharacters(in: .whitespaces).isEmpty || company.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            if let error { Text(error).font(.bzBody(13)).foregroundStyle(Color.bzDestructive) }
+        }
+    }
+
+    private func run(_ work: @escaping () async throws -> Void) {
+        Task {
+            busy = true
+            defer { busy = false }
+            do { try await work() } catch { self.error = error.localizedDescription }
         }
     }
 }
