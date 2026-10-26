@@ -1,0 +1,20 @@
+{
+  "name": "@batzio/tokens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Batzio design tokens (metallic blue, neumorphic surfaces) and their generated CSS, SwiftUI, Compose and WinUI forms.",
+  "type": "module",
+  "exports": {
+    "./tokens.css": "./generated/tokens.css",
+    "./tokens.json": "./tokens.json",
+    "./resolved.json": "./generated/tokens.resolved.json"
+  },
+  "scripts": {
+    "gen": "node scripts/build.mjs",
+    "check": "node scripts/build.mjs --check",
+    "brand": "node scripts/brand.mjs"
+  },
+  "devDependencies": {
+    "sharp": "0.35.5"
+  }
+}

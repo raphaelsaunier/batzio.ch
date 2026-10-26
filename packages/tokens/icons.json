@@ -1,0 +1,435 @@
+{
+ "$description": "Server icon names (lucide) mapped to SF Symbols, Material Icons (Compose Icons.Outlined.*) and Segoe Fluent Icons glyphs. Edit here, then `pnpm gen`.",
+ "fallback": [
+  "circle",
+  "Circle",
+  "E8A5"
+ ],
+ "icons": {
+  "AlarmClock": {
+   "sf": "alarm",
+   "material": "Alarm",
+   "fluent": "E823"
+  },
+  "ArchiveRestore": {
+   "sf": "arrow.uturn.backward.square",
+   "material": "Unarchive",
+   "fluent": "E7A7"
+  },
+  "ArrowDownUp": {
+   "sf": "arrow.up.arrow.down",
+   "material": "SwapVert",
+   "fluent": "E8CB"
+  },
+  "ArrowLeftRight": {
+   "sf": "arrow.left.arrow.right",
+   "material": "SwapHoriz",
+   "fluent": "E8AB"
+  },
+  "ArrowRightLeft": {
+   "sf": "arrow.left.arrow.right",
+   "material": "SwapHoriz",
+   "fluent": "E8AB"
+  },
+  "BadgeCheck": {
+   "sf": "checkmark.seal",
+   "material": "Verified",
+   "fluent": "E73E"
+  },
+  "BadgeDollarSign": {
+   "sf": "dollarsign.circle",
+   "material": "RequestQuote",
+   "fluent": "E8C7"
+  },
+  "Ban": {
+   "sf": "nosign",
+   "material": "Block",
+   "fluent": "E711"
+  },
+  "Banknote": {
+   "sf": "banknote",
+   "material": "Payments",
+   "fluent": "E8C7"
+  },
+  "BarChart3": {
+   "sf": "chart.bar",
+   "material": "BarChart",
+   "fluent": "E9D2"
+  },
+  "BellRing": {
+   "sf": "bell.badge",
+   "material": "NotificationsActive",
+   "fluent": "EA8F"
+  },
+  "BookOpen": {
+   "sf": "book",
+   "material": "MenuBook",
+   "fluent": "E82D"
+  },
+  "Bot": {
+   "sf": "sparkles",
+   "material": "SmartToy",
+   "fluent": "E99A"
+  },
+  "Boxes": {
+   "sf": "shippingbox",
+   "material": "Category",
+   "fluent": "E7B8"
+  },
+  "CalendarCheck": {
+   "sf": "calendar.badge.checkmark",
+   "material": "EventAvailable",
+   "fluent": "E787"
+  },
+  "CalendarClock": {
+   "sf": "calendar.badge.clock",
+   "material": "Schedule",
+   "fluent": "E787"
+  },
+  "CalendarOff": {
+   "sf": "calendar.badge.exclamationmark",
+   "material": "EventBusy",
+   "fluent": "E787"
+  },
+  "CalendarRange": {
+   "sf": "calendar",
+   "material": "DateRange",
+   "fluent": "E787"
+  },
+  "CheckCheck": {
+   "sf": "checkmark.circle",
+   "material": "DoneAll",
+   "fluent": "E73E"
+  },
+  "CircleSlash": {
+   "sf": "slash.circle",
+   "material": "Block",
+   "fluent": "E711"
+  },
+  "ClipboardList": {
+   "sf": "list.clipboard",
+   "material": "Assignment",
+   "fluent": "E9D5"
+  },
+  "Coins": {
+   "sf": "dollarsign.circle",
+   "material": "MonetizationOn",
+   "fluent": "E8C7"
+  },
+  "Copy": {
+   "sf": "doc.on.doc",
+   "material": "ContentCopy",
+   "fluent": "E8C8"
+  },
+  "EyeOff": {
+   "sf": "eye.slash",
+   "material": "VisibilityOff",
+   "fluent": "ED1A"
+  },
+  "FileInput": {
+   "sf": "doc.badge.arrow.up",
+   "material": "Input",
+   "fluent": "E8B5"
+  },
+  "FileOutput": {
+   "sf": "doc.badge.arrow.up",
+   "material": "Output",
+   "fluent": "E898"
+  },
+  "FilePen": {
+   "sf": "square.and.pencil",
+   "material": "Edit",
+   "fluent": "E70F"
+  },
+  "FileSpreadsheet": {
+   "sf": "tablecells",
+   "material": "TableChart",
+   "fluent": "E80A"
+  },
+  "FileText": {
+   "sf": "doc.text",
+   "material": "Description",
+   "fluent": "E8A5"
+  },
+  "Flag": {
+   "sf": "flag",
+   "material": "Flag",
+   "fluent": "E7C1"
+  },
+  "FolderKanban": {
+   "sf": "folder",
+   "material": "FolderOpen",
+   "fluent": "E8B7"
+  },
+  "FolderTree": {
+   "sf": "list.bullet.indent",
+   "material": "AccountTree",
+   "fluent": "E8B7"
+  },
+  "Globe": {
+   "sf": "globe",
+   "material": "Public",
+   "fluent": "E774"
+  },
+  "Hammer": {
+   "sf": "hammer",
+   "material": "Construction",
+   "fluent": "E90F"
+  },
+  "HandCoins": {
+   "sf": "hand.raised.circle",
+   "material": "Paid",
+   "fluent": "E8C7"
+  },
+  "IdCard": {
+   "sf": "person.text.rectangle",
+   "material": "Badge",
+   "fluent": "E779"
+  },
+  "Inbox": {
+   "sf": "tray",
+   "material": "Inbox",
+   "fluent": "E715"
+  },
+  "KeyRound": {
+   "sf": "key",
+   "material": "Key",
+   "fluent": "E8D7"
+  },
+  "Landmark": {
+   "sf": "building.columns",
+   "material": "AccountBalance",
+   "fluent": "E825"
+  },
+  "Languages": {
+   "sf": "character.bubble",
+   "material": "Translate",
+   "fluent": "E8C1"
+  },
+  "LayoutDashboard": {
+   "sf": "square.grid.2x2",
+   "material": "Dashboard",
+   "fluent": "E80A"
+  },
+  "LayoutGrid": {
+   "sf": "square.grid.3x3",
+   "material": "GridView",
+   "fluent": "E80A"
+  },
+  "ListTodo": {
+   "sf": "checklist",
+   "material": "Checklist",
+   "fluent": "E9D5"
+  },
+  "Lock": {
+   "sf": "lock",
+   "material": "Lock",
+   "fluent": "E72E"
+  },
+  "LockOpen": {
+   "sf": "lock.open",
+   "material": "LockOpen",
+   "fluent": "E785"
+  },
+  "Mail": {
+   "sf": "envelope",
+   "material": "Mail",
+   "fluent": "E715"
+  },
+  "MapPin": {
+   "sf": "mappin.and.ellipse",
+   "material": "Place",
+   "fluent": "E707"
+  },
+  "MessageSquare": {
+   "sf": "bubble.left",
+   "material": "Chat",
+   "fluent": "E8BD"
+  },
+  "Network": {
+   "sf": "point.3.connected.trianglepath.dotted",
+   "material": "Hub",
+   "fluent": "E968"
+  },
+  "NotebookPen": {
+   "sf": "book.closed",
+   "material": "EditNote",
+   "fluent": "E70B"
+  },
+  "Package": {
+   "sf": "shippingbox",
+   "material": "Inventory2",
+   "fluent": "E7B8"
+  },
+  "PackageCheck": {
+   "sf": "shippingbox.and.arrow.backward",
+   "material": "Inventory",
+   "fluent": "E7B8"
+  },
+  "PackagePlus": {
+   "sf": "plus.square.on.square",
+   "material": "AddBox",
+   "fluent": "E710"
+  },
+  "Paperclip": {
+   "sf": "paperclip",
+   "material": "AttachFile",
+   "fluent": "E723"
+  },
+  "Percent": {
+   "sf": "percent",
+   "material": "Percent",
+   "fluent": "E8EF"
+  },
+  "PiggyBank": {
+   "sf": "banknote",
+   "material": "Savings",
+   "fluent": "E8C7"
+  },
+  "Plus": {
+   "sf": "plus",
+   "material": "Add",
+   "fluent": "E710"
+  },
+  "Receipt": {
+   "sf": "receipt",
+   "material": "Receipt",
+   "fluent": "E8A5"
+  },
+  "ReceiptText": {
+   "sf": "doc.plaintext",
+   "material": "ReceiptLong",
+   "fluent": "E8A5"
+  },
+  "Repeat": {
+   "sf": "repeat",
+   "material": "Repeat",
+   "fluent": "E8EE"
+  },
+  "Rows3": {
+   "sf": "rectangle.grid.1x2",
+   "material": "TableRows",
+   "fluent": "E8FD"
+  },
+  "Scale": {
+   "sf": "scalemass",
+   "material": "Balance",
+   "fluent": "E9F9"
+  },
+  "Search": {
+   "sf": "magnifyingglass",
+   "material": "Search",
+   "fluent": "E721"
+  },
+  "Send": {
+   "sf": "paperplane",
+   "material": "Send",
+   "fluent": "E724"
+  },
+  "Settings": {
+   "sf": "gearshape",
+   "material": "Settings",
+   "fluent": "E713"
+  },
+  "ShieldCheck": {
+   "sf": "checkmark.shield",
+   "material": "VerifiedUser",
+   "fluent": "EA18"
+  },
+  "ShoppingCart": {
+   "sf": "cart",
+   "material": "ShoppingCart",
+   "fluent": "E7BF"
+  },
+  "Sparkles": {
+   "sf": "sparkles",
+   "material": "AutoAwesome",
+   "fluent": "E945"
+  },
+  "Stamp": {
+   "sf": "seal",
+   "material": "Approval",
+   "fluent": "E73E"
+  },
+  "StickyNote": {
+   "sf": "note.text",
+   "material": "StickyNote2",
+   "fluent": "E70B"
+  },
+  "Sun": {
+   "sf": "sun.max",
+   "material": "WbSunny",
+   "fluent": "E706"
+  },
+  "ThumbsDown": {
+   "sf": "hand.thumbsdown",
+   "material": "ThumbDown",
+   "fluent": "E8E0"
+  },
+  "ThumbsUp": {
+   "sf": "hand.thumbsup",
+   "material": "ThumbUp",
+   "fluent": "E8E1"
+  },
+  "Timer": {
+   "sf": "timer",
+   "material": "Timer",
+   "fluent": "E916"
+  },
+  "Trash2": {
+   "sf": "trash",
+   "material": "Delete",
+   "fluent": "E74D"
+  },
+  "TrendingDown": {
+   "sf": "chart.line.downtrend.xyaxis",
+   "material": "TrendingDown",
+   "fluent": "E9D2"
+  },
+  "TrendingUp": {
+   "sf": "chart.line.uptrend.xyaxis",
+   "material": "TrendingUp",
+   "fluent": "E9D2"
+  },
+  "Truck": {
+   "sf": "truck.box",
+   "material": "LocalShipping",
+   "fluent": "E806"
+  },
+  "Undo2": {
+   "sf": "arrow.uturn.backward",
+   "material": "Undo",
+   "fluent": "E7A7"
+  },
+  "Upload": {
+   "sf": "square.and.arrow.up",
+   "material": "Upload",
+   "fluent": "E898"
+  },
+  "UserRoundPen": {
+   "sf": "person.crop.circle.badge",
+   "material": "ManageAccounts",
+   "fluent": "E77B"
+  },
+  "Users": {
+   "sf": "person.2",
+   "material": "Group",
+   "fluent": "E716"
+  },
+  "Wallet": {
+   "sf": "wallet.pass",
+   "material": "AccountBalanceWallet",
+   "fluent": "E8C7"
+  },
+  "Wand2": {
+   "sf": "wand.and.stars",
+   "material": "AutoFixHigh",
+   "fluent": "E945"
+  },
+  "Warehouse": {
+   "sf": "building.2",
+   "material": "Warehouse",
+   "fluent": "E80F"
+  }
+ }
+}

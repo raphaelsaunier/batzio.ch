@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generated from packages/i18n by `pnpm gen`. Do not edit. -->
+<resources>
+    <string name="app_name" translatable="false">Batzio</string>
+    <string name="share_label">Send to Batzio</string>
+</resources>

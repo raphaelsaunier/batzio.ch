@@ -1,0 +1,183 @@
+using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Batzio.Core.Models;
+using static Batzio.Core.Localization.Loc;
+
+namespace Batzio.Core.Api;
+
+public sealed class ApiException(int status, string code, string message, Dictionary<string, string>? fields = null) : Exception(message)
+{
+    public int Status { get; } = status;
+    public string Code { get; } = code;
+    public Dictionary<string, string> Fields { get; } = fields ?? [];
+    public bool IsUnauthorized => Status == 401;
+}
+
+/// <summary>A file to upload (attachments, drops, bank statements).</summary>
+public sealed record UploadFile(string Name, string MimeType, byte[] Bytes);
+
+public sealed record Download(byte[] Bytes, string FileName, string MimeType);
+
+/// <summary>
+/// Talks to a Batzio server: <c>Authorization: Bearer &lt;session&gt;</c>, <c>X-Tenant</c> for the chosen
+/// company and <c>Accept-Language</c> so every text comes back translated.
+/// </summary>
+public sealed class ApiClient(string baseUrl, string? token = null, string? tenant = null, string locale = "en", string mode = "simple")
+{
+    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromMinutes(10) };
+
+    public string BaseUrl { get; } = baseUrl.TrimEnd('/');
+    public string? Token { get; } = token;
+    public string? Tenant { get; } = tenant;
+    public string Locale { get; } = locale;
+    public string Mode { get; } = mode;
+
+    public Uri Url(string path, IDictionary<string, string?>? query = null)
+    {
+        var parts = (query ?? new Dictionary<string, string?>())
+            .Where(kv => kv.Value is not null)
+            .OrderBy(kv => kv.Key, StringComparer.Ordinal)
+            .Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value!)}")
+            .Append($"locale={Locale}");
+        return new Uri($"{BaseUrl}{path}?{string.Join("&", parts)}");
+    }
+
+    private static string V1(string path) => path.StartsWith("/api/", StringComparison.Ordinal) ? path : "/api/v1" + path;
+
+    public HttpRequestMessage Request(HttpMethod method, string path, IDictionary<string, string?>? query = null)
+    {
+        var r = new HttpRequestMessage(method, Url(path, query));
+        r.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        r.Headers.AcceptLanguage.Add(new StringWithQualityHeaderValue(Locale));
+        if (Token is not null) r.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Token);
+        if (Tenant is not null) r.Headers.Add("X-Tenant", Tenant);
+        return r;
+    }
+
+    private static async Task<HttpResponseMessage> Execute(HttpRequestMessage request, HttpCompletionOption completion = HttpCompletionOption.ResponseContentRead, CancellationToken ct = default)
+    {
+        HttpResponseMessage response;
+        try
+        {
+            response = await Http.SendAsync(request, completion, ct).ConfigureAwait(false);
+        }
+        catch (HttpRequestException)
+        {
+            throw new ApiException(0, "offline", L("Batzio can’t be reached. Check your connection and the server address."));
+        }
+        if (response.IsSuccessStatusCode) return response;
+        var text = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        string code = $"http_{(int)response.StatusCode}", message = response.ReasonPhrase ?? code;
+        Dictionary<string, string>? fields = null;
+        try
+        {
+            var error = JsonNode.Parse(text)?["error"];
+            code = error?["code"].Str() ?? code;
+            message = error?["message"].Str() ?? message;
+            fields = error?["fields"]?.Deserialize<Dictionary<string, string>>(Json.Options);
+        }
+        catch (JsonException) { }
+        response.Dispose();
+        throw new ApiException((int)response.StatusCode, code, message, fields);
+    }
+
+    private static async Task<T> Decode<T>(HttpResponseMessage response)
+    {
+        using (response)
+        {
+            var node = JsonNode.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+            return node!["data"].To<T>()!;
+        }
+    }
+
+    public async Task<T> GetAsync<T>(string path, IDictionary<string, string?>? query = null) =>
+        await Decode<T>(await Execute(Request(HttpMethod.Get, V1(path), query)));
+
+    public async Task<T> SendAsync<T>(string method, string path, JsonNode? body = null, IDictionary<string, string?>? query = null)
+    {
+        var r = Request(new HttpMethod(method), V1(path), query);
+        r.Content = new StringContent((body ?? new JsonObject()).ToJsonString(Json.Options), Encoding.UTF8, "application/json");
+        return await Decode<T>(await Execute(r));
+    }
+
+    public async Task<Download> DownloadAsync(string path, IDictionary<string, string?>? query = null)
+    {
+        var r = Request(HttpMethod.Get, V1(path), query);
+        r.Headers.Accept.Clear();
+        r.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
+        using var response = await Execute(r);
+        var name = response.Content.Headers.ContentDisposition?.FileNameStar ?? response.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? path.Split('/').Last();
+        return new Download(await response.Content.ReadAsByteArrayAsync(), name, response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream");
+    }
+
+    public async Task<T> UploadAsync<T>(string path, IEnumerable<UploadFile> files, string fileField = "files", IDictionary<string, string>? fields = null, IDictionary<string, string?>? query = null)
+    {
+        var form = new MultipartFormDataContent();
+        foreach (var (k, v) in fields ?? new Dictionary<string, string>()) form.Add(new StringContent(v), k);
+        foreach (var f in files)
+        {
+            var content = new ByteArrayContent(f.Bytes);
+            content.Headers.ContentType = new MediaTypeHeaderValue(f.MimeType);
+            form.Add(content, fileField, f.Name);
+        }
+        var r = Request(HttpMethod.Post, V1(path), query);
+        r.Content = form;
+        return await Decode<T>(await Execute(r));
+    }
+
+    public async Task<T> SendRawAsync<T>(string path, byte[] body, string contentType, IDictionary<string, string?>? query = null)
+    {
+        var r = Request(HttpMethod.Post, V1(path), query);
+        r.Content = new ByteArrayContent(body);
+        r.Content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+        return await Decode<T>(await Execute(r));
+    }
+
+    /// <summary>Streams Batzi's work as it happens (NDJSON from <c>/api/agent</c>).</summary>
+    public async IAsyncEnumerable<AgentEvent> AgentAsync(JsonObject body, [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        body["locale"] ??= Locale;
+        var r = Request(HttpMethod.Post, "/api/agent");
+        r.Headers.Accept.Clear();
+        r.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/x-ndjson"));
+        r.Content = new StringContent(body.ToJsonString(Json.Options), Encoding.UTF8, "application/json");
+        using var response = await Execute(r, HttpCompletionOption.ResponseHeadersRead, ct);
+        using var stream = await response.Content.ReadAsStreamAsync(ct);
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+        while (await reader.ReadLineAsync(ct) is { } line)
+        {
+            if (AgentEvent.Parse(line) is { } e) yield return e;
+        }
+    }
+}
+
+/// <summary>One line of Batzi's stream.</summary>
+public abstract record AgentEvent
+{
+    public sealed record Thread(string Id) : AgentEvent;
+    public sealed record Text(string Delta) : AgentEvent;
+    public sealed record Update(string Message) : AgentEvent;
+    public sealed record Tool(ToolOutcome Outcome) : AgentEvent;
+    public sealed record Done(bool Refused) : AgentEvent;
+    public sealed record Error(string Message) : AgentEvent;
+
+    public static AgentEvent? Parse(string line)
+    {
+        if (string.IsNullOrWhiteSpace(line)) return null;
+        JsonNode? o;
+        try { o = JsonNode.Parse(line); } catch (JsonException) { return null; }
+        return o?["type"].Str() switch
+        {
+            "thread" => o["threadId"].Str() is { } id ? new Thread(id) : null,
+            "text" => new Text(o["delta"].Str() ?? ""),
+            "update" => new Update(o["text"].Str() ?? ""),
+            "tool" => o["outcome"].To<ToolOutcome>() is { } t ? new Tool(t) : null,
+            "done" => new Done(o["refused"].Bool() ?? false),
+            "error" => new Error(o["message"].Str() ?? ""),
+            _ => null,
+        };
+    }
+}

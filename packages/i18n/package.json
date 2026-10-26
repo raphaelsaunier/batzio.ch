@@ -1,0 +1,26 @@
+{
+  "name": "@batzio/i18n",
+  "version": "0.1.0",
+  "private": true,
+  "description": "EN/DE/FR/IT catalog, glossary and runtime, plus generators for the native apps' string resources.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./react": "./src/react.tsx",
+    "./messages": "./src/messages/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "gen": "node scripts/native.mjs",
+    "typecheck": "tsc --noEmit",
+    "check": "node scripts/native.mjs --check"
+  },
+  "peerDependencies": {
+    "react": "^19"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "react": "19.3.1",
+    "vite": "8.3.0"
+  }
+}

@@ -1,0 +1,4 @@
+/* Generated from packages/i18n by `pnpm gen`. Do not edit. */
+"CFBundleDisplayName" = "Batzio";
+"NSCameraUsageDescription" = "Batzio nutzt die Kamera, um Belege und Dokumente zu scannen.";
+"NSPhotoLibraryUsageDescription" = "Batzio liest die Belege und Dokumente, die Sie auswählen.";

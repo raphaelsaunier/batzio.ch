@@ -1,0 +1,14 @@
+{
+  "info": {
+    "author": "batzio",
+    "version": 1
+  },
+  "layers": [
+    {
+      "filename": "Front.solidimagestacklayer"
+    },
+    {
+      "filename": "Back.solidimagestacklayer"
+    }
+  ]
+}

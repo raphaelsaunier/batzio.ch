@@ -1,0 +1,4 @@
+/* Generated from packages/i18n by `pnpm gen`. Do not edit. */
+"CFBundleDisplayName" = "Batzio";
+"NSCameraUsageDescription" = "Batzio usa la fotocamera per scansionare ricevute e documenti.";
+"NSPhotoLibraryUsageDescription" = "Batzio legge le ricevute e i documenti che sceglie.";

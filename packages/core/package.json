@@ -1,0 +1,13 @@
+{
+  "name": "@batzio/core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pure Swiss accounting logic shared by every Batzio surface: money, VAT, QR-bill, IBAN, payroll and document maths, quick-sentence parsing.",
+  "type": "module",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

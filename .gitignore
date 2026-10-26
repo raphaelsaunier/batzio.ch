@@ -10,11 +10,20 @@ node_modules
 .next
 next-env.d.ts
 /dist/
+apps/*/dist/
 .vinext/
 .cloudflare/
 .wrangler/
 *.tsbuildinfo
 coverage/
+
+# native builds (the Xcode project is generated from apps/apple/project.yml)
+apps/apple/build/
+.build/
+.swiftpm/
+apps/apple/*.xcodeproj/
+DerivedData/
+.kotlin/
 
 # local reference material (never versioned)
 tmp/

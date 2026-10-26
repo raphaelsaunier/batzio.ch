@@ -1,0 +1,93 @@
+# Batzio for Apple platforms: one SwiftUI app for iPhone, iPad, Mac and Apple
+# Vision Pro. Generate the Xcode project with `xcodegen` (see README).
+name: Batzio
+options:
+  bundleIdPrefix: ch.batzio
+  developmentLanguage: en
+  knownRegions: [en, de, fr, it, Base]
+  deploymentTarget:
+    iOS: "18.0"
+    macOS: "15.0"
+    visionOS: "2.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    SWIFT_EMIT_LOC_STRINGS: NO
+    STRING_CATALOG_GENERATE_SYMBOLS: NO
+
+packages:
+  BatzioKit:
+    path: BatzioKit
+
+targets:
+  Batzio:
+    type: application
+    supportedDestinations: [iOS, macOS, visionOS]
+    sources:
+      - path: Batzio
+      - path: ../../packages/tokens/fonts/font/bricolage_grotesque.ttf
+        buildPhase: resources
+      - path: ../../packages/tokens/fonts/font/inter.ttf
+        buildPhase: resources
+    dependencies:
+      - package: BatzioKit
+    entitlements:
+      path: Batzio/Batzio.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+        com.apple.security.files.user-selected.read-write: true
+        com.apple.security.files.downloads.read-write: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ch.batzio.app
+        PRODUCT_NAME: Batzio
+        TARGETED_DEVICE_FAMILY: "1,2,7"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        "ASSETCATALOG_COMPILER_APPICON_NAME[sdk=xros*]": AppIconVision
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        INFOPLIST_KEY_CFBundleDisplayName: Batzio
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.finance
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortraitUpsideDown"
+        ENABLE_PREVIEWS: YES
+        GENERATE_INFOPLIST_FILE: YES
+        "INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace[sdk=iphone*]": NO
+        "INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace[sdk=xr*]": NO
+        "INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace[sdk=macosx*]": YES
+    info:
+      path: Batzio/Info.plist
+      properties:
+        CFBundleLocalizations: [en, de, fr, it]
+        CFBundleAllowMixedLocalizations: true
+        UISupportsDocumentBrowser: false
+        NSCameraUsageDescription: Batzio uses the camera to scan receipts and documents.
+        NSPhotoLibraryUsageDescription: Batzio reads the receipts and documents you pick.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Receipts and documents
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes: [com.adobe.pdf, public.image, public.comma-separated-values-text, public.xml, org.openxmlformats.spreadsheetml.sheet, public.plain-text]
+        CFBundleURLTypes:
+          - CFBundleURLName: ch.batzio.app
+            CFBundleURLSchemes: [batzio]
+
+
+schemes:
+  Batzio:
+    build:
+      targets:
+        Batzio: all
+    run:
+      config: Debug

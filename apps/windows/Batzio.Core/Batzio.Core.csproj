@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Everything the Windows app shares that is not a screen: API client, models,
+       translations (packages/i18n), Swiss formatting and icons. Cross-platform, so
+       it builds and tests anywhere. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>Batzio.Core</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\strings.json" LogicalName="Batzio.Core.strings.json" />
+  </ItemGroup>
+</Project>

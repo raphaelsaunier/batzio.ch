@@ -1,0 +1,664 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+/* Colour, radius and shadow tokens live in packages/tokens (shared with the native apps). */
+@import "@batzio/tokens/tokens.css";
+@source "../../../packages/server/src";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Batzio — metallic blue, but friendly.
+ * Steel/cobalt primary on airy sky-tinted silver, with a few cheerful accents
+ * (sun, mint, coral, lilac) reserved for moments of delight.
+ */
+@theme inline {
+  --font-heading: var(--font-display);
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-brand: var(--font-brand);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-sun: var(--sun);
+  --color-mint: var(--mint);
+  --color-coral: var(--coral);
+  --color-lilac: var(--lilac);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  --shadow-soft: var(--shadow-soft);
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-wiggle: wiggle 0.6s ease-in-out;
+  --animate-pop: pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(-2deg); }
+    50% { transform: translateY(-6px) rotate(2deg); }
+  }
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-8deg); }
+    75% { transform: rotate(8deg); }
+  }
+  @keyframes pop {
+    0% { transform: scale(0.85); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    font-feature-settings: "cv11", "ss01";
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    margin: 0;
+    background-image:
+      radial-gradient(60rem 30rem at 85% -10%, var(--sky-1), transparent 60%),
+      radial-gradient(40rem 24rem at -5% 0%, var(--sky-2), transparent 60%);
+    background-attachment: fixed;
+  }
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+    letter-spacing: -0.015em;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  ::selection {
+    background: oklch(0.8 0.08 245 / 45%);
+  }
+}
+
+@layer utilities {
+  /* Brushed-metal gradient for brand surfaces. */
+  .bg-metal {
+    background-image:
+      linear-gradient(180deg, oklch(1 0 0 / 18%), transparent 45%),
+      linear-gradient(135deg, var(--metal-from) 0%, var(--metal-mid) 50%, var(--metal-to) 100%);
+  }
+  /* Today hero: soft metallic sky with a faint Swiss cross pattern. */
+  .bg-hero {
+    background-color: var(--card);
+    background-image:
+      radial-gradient(120% 90% at 0% 0%, oklch(0.93 0.04 245 / 70%), transparent 60%),
+      radial-gradient(80% 70% at 100% 100%, oklch(0.9 0.05 230 / 45%), transparent 65%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'%3E%3Cpath d='M20 16h4v4h4v4h-4v4h-4v-4h-4v-4h4z' fill='%237aa3cf' fill-opacity='.10'/%3E%3C/svg%3E");
+  }
+  .dark .bg-hero {
+    background-image:
+      radial-gradient(120% 90% at 0% 0%, oklch(0.35 0.06 250 / 60%), transparent 60%),
+      radial-gradient(80% 70% at 100% 100%, oklch(0.3 0.05 230 / 50%), transparent 65%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'%3E%3Cpath d='M20 16h4v4h4v4h-4v4h-4v-4h-4v-4h4z' fill='%239cc0e4' fill-opacity='.07'/%3E%3C/svg%3E");
+  }
+  .capitalize-first::first-letter {
+    text-transform: uppercase;
+  }
+  .text-metal {
+    background-image: linear-gradient(120deg, var(--metal-from), var(--metal-mid) 50%, var(--metal-to));
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  /* A tilted "sticker" label for playful highlights. */
+  .sticker {
+    @apply inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1 text-xs font-semibold shadow-soft;
+  }
+  .lift {
+    @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md;
+  }
+  .doodle-underline {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 8'%3E%3Cpath d='M1 5.5c18-4 37-4 57-1.5S99 7 119 2' fill='none' stroke='%237aa3cf' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 100% 0.35em;
+    padding-bottom: 0.12em;
+  }
+}
+
+/* ------------------------------------------------------------ the coin */
+.coin-stage {
+  --coin-size: clamp(220px, 34vw, 340px);
+  --coin-depth: calc(var(--coin-size) * 0.085);
+  position: relative;
+  width: var(--coin-size);
+  height: var(--coin-size);
+  perspective: 1400px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.coin-stage:not([data-ready]) .coin,
+.coin-stage:not([data-ready]) .coin-shadow {
+  opacity: 0;
+}
+.coin-tilt,
+.coin {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+.coin-tilt {
+  transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.coin {
+  will-change: transform;
+}
+.coin-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 50%;
+  backface-visibility: hidden;
+  transform: translateZ(calc(var(--coin-depth) / 2));
+}
+.coin-face-back {
+  transform: rotateY(180deg) translateZ(calc(var(--coin-depth) / 2));
+}
+.coin-face img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  pointer-events: none;
+}
+/* Domed lighting: a soft highlight that follows the pointer, a rim light and a darker lower edge. */
+.coin-glare {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at var(--glare-x, 32%) var(--glare-y, 24%), rgb(255 255 255 / 0.55), transparent 48%),
+    radial-gradient(circle at 72% 88%, rgb(8 22 44 / 0.35), transparent 58%);
+  box-shadow:
+    inset 0 0 0 1.5px rgb(255 255 255 / 0.3),
+    inset 0 -12px 28px rgb(8 20 40 / 0.35);
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+}
+.coin-sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(105deg, transparent 40%, rgb(255 255 255 / 0.65) 50%, transparent 60%);
+  background-size: 300% 100%;
+  background-position: 0% 0%;
+  opacity: 0;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+/* The reeded edge: thin facets around the rim, ridged and shaded by their angle to the light. */
+.coin-facet {
+  position: absolute;
+  top: calc(50% - var(--coin-depth) / 2);
+  left: calc(50% - (var(--coin-size) * 0.05236 + 1px) / 2);
+  width: calc(var(--coin-size) * 0.05236 + 1px);
+  height: var(--coin-depth);
+  backface-visibility: hidden;
+  background:
+    linear-gradient(rgb(6 16 32 / var(--facet-shade)), rgb(6 16 32 / var(--facet-shade))),
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.6) 0 1px, rgb(18 34 60 / 0.5) 1px 2.4px, transparent 2.4px 3.8px),
+    linear-gradient(180deg, #1f3048 0%, #6b84a3 20%, #dfe8f2 50%, #6b84a3 80%, #1f3048 100%);
+}
+/* Contact shadow on the page. */
+.coin-shadow {
+  position: absolute;
+  inset: 3%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(12 28 52 / 0.6), rgb(12 28 52 / 0.25) 62%, transparent);
+  transform: translate(0, 4%);
+  opacity: 0.55;
+  filter: blur(6px);
+}
+.dark .coin-shadow {
+  background: radial-gradient(closest-side, rgb(0 0 0 / 0.85), rgb(0 0 0 / 0.4) 62%, transparent);
+}
+
+/* Tagline: “Accounting Suite” → struck through → “Accounting, Sweet!” */
+.coin-tagline {
+  display: grid;
+  justify-items: center;
+}
+.coin-tagline > * {
+  grid-area: 1 / 1;
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.coin-tagline-suite {
+  position: relative;
+  opacity: 0;
+  transform: translateY(8px);
+}
+.coin-tagline-strike {
+  position: absolute;
+  top: 54%;
+  left: -4%;
+  width: 108%;
+  height: 0.12em;
+  border-radius: 999px;
+  background: var(--destructive);
+  transform: rotate(-2.5deg) scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.45s cubic-bezier(0.6, 0, 0.3, 1);
+}
+.coin-tagline-sweet {
+  opacity: 0;
+  transform: translateY(10px) scale(0.92) rotate(-2deg);
+}
+.coin-tagline[data-phase="1"] .coin-tagline-suite,
+.coin-tagline[data-phase="2"] .coin-tagline-suite {
+  opacity: 1;
+  transform: none;
+}
+.coin-tagline[data-phase="2"] .coin-tagline-strike,
+.coin-tagline[data-phase="3"] .coin-tagline-strike {
+  transform: rotate(-2.5deg) scaleX(1);
+}
+.coin-tagline[data-phase="3"] .coin-tagline-suite {
+  opacity: 0.45;
+  transform: translateY(-0.95em) scale(0.6);
+}
+.coin-tagline[data-phase="3"] .coin-tagline-sweet {
+  opacity: 1;
+  transform: translateY(0.3em) rotate(-1.5deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .coin-tagline > *,
+  .coin-tagline-strike,
+  .coin-tilt {
+    transition: none;
+  }
+}
+
+/* ------------------------------------------------------- neumorphic kit */
+@layer components {
+  .neu-card {
+    border-radius: calc(var(--radius) + 6px);
+    background: var(--neu-surface);
+    box-shadow: var(--neu-raised);
+  }
+  .neu-panel {
+    border-radius: calc(var(--radius) + 4px);
+    background: var(--neu-surface);
+    box-shadow: var(--neu-raised), 0 24px 48px -24px oklch(0.3 0.06 255 / 35%);
+    border: 1px solid oklch(1 0 0 / 50%);
+  }
+  .dark .neu-panel {
+    border-color: oklch(1 0 0 / 6%);
+  }
+  .neu-toolbar {
+    border-radius: 999px;
+    background: color-mix(in oklch, var(--neu-surface) 88%, transparent);
+    backdrop-filter: blur(10px);
+    box-shadow: var(--neu-raised), 0 18px 40px -20px oklch(0.3 0.08 255 / 45%);
+  }
+  .neu-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    height: 2.25rem;
+    padding: 0 0.95rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--foreground);
+    background: var(--neu-surface);
+    box-shadow: var(--neu-raised-sm);
+    transition:
+      box-shadow 0.18s ease,
+      transform 0.12s ease;
+  }
+  .neu-button svg {
+    width: 1rem;
+    height: 1rem;
+  }
+  .neu-button:hover {
+    box-shadow: var(--neu-raised);
+  }
+  .neu-button:active,
+  .neu-button[aria-pressed="true"] {
+    box-shadow: var(--neu-pressed);
+    transform: translateY(1px);
+  }
+  .neu-button:disabled {
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  /* The primary button is a minted metal coin: bevelled, lit from above. */
+  .neu-button-primary {
+    color: white;
+    background-image:
+      linear-gradient(180deg, oklch(1 0 0 / 28%), transparent 48%),
+      linear-gradient(135deg, var(--metal-from), var(--metal-mid) 55%, var(--metal-to));
+    box-shadow:
+      var(--neu-raised-sm),
+      inset 0 1px 0 oklch(1 0 0 / 45%),
+      inset 0 -2px 3px oklch(0.2 0.08 260 / 35%);
+    text-shadow: 0 1px 1px oklch(0.2 0.08 260 / 45%);
+  }
+  .neu-button-primary:active {
+    box-shadow:
+      inset 0 2px 6px oklch(0.15 0.08 260 / 55%),
+      inset 0 -1px 0 oklch(1 0 0 / 25%);
+  }
+  .neu-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    height: 1.6rem;
+    min-width: 1.6rem;
+    border-radius: 0.55rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--muted-foreground);
+    background: var(--neu-surface);
+    box-shadow: var(--neu-raised-sm);
+    transition:
+      box-shadow 0.15s ease,
+      color 0.15s ease;
+  }
+  .neu-chip svg {
+    width: 0.8rem;
+    height: 0.8rem;
+  }
+  .neu-chip:hover {
+    color: var(--foreground);
+  }
+  .neu-chip:active,
+  .neu-chip-on {
+    box-shadow: var(--neu-pressed);
+    color: var(--primary);
+  }
+  .neu-chip:disabled {
+    opacity: 0.35;
+  }
+
+  /* ----------------------------------------------- the desk and the paper */
+  .desk {
+    background-color: var(--desk);
+    background-image:
+      radial-gradient(120% 80% at 50% 0%, oklch(1 0 0 / 55%), transparent 70%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .42 0 0 0 0 .55 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .dark .desk {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .6 0 0 0 0 .7 0 0 0 0 .9 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  /* Paper: bright, faintly textured, resting on the desk with a soft contact shadow and lifted corners. */
+  .paper {
+    background-color: #fffefb;
+    background-image:
+      linear-gradient(180deg, oklch(1 0 0 / 90%), transparent 12%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.4' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .48 0 0 0 0 .42 0 0 0 .045 0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23p)'/%3E%3C/svg%3E");
+    box-shadow:
+      0 0 0 0.5px oklch(0.4 0.03 250 / 12%),
+      0 1px 1px oklch(0.3 0.05 250 / 8%),
+      0 3px 6px -1px oklch(0.3 0.06 250 / 10%),
+      0 18px 36px -12px oklch(0.25 0.07 255 / 28%);
+  }
+  .paper::before,
+  .paper::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    bottom: 10px;
+    width: 45%;
+    height: 18%;
+    box-shadow: 0 16px 14px oklch(0.25 0.06 255 / 22%);
+  }
+  .paper::before {
+    left: 12px;
+    transform: rotate(-2.5deg);
+  }
+  .paper::after {
+    right: 12px;
+    transform: rotate(2.5deg);
+  }
+  .sheet {
+    font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .sheet p {
+    margin: 0;
+  }
+  .sheet-hint {
+    color: oklch(0.6 0.04 250);
+    font-style: italic;
+  }
+
+  /* Fields that look printed until you reach for them. */
+  .sheet-input {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    resize: none;
+    overflow: hidden;
+    font: inherit;
+    color: inherit;
+    background: transparent;
+    border-radius: 2pt;
+    transition:
+      background 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+  .sheet-input::placeholder {
+    color: transparent;
+    font-style: italic;
+  }
+  .sheet-input:hover,
+  .sheet-row:hover .sheet-input,
+  .sheet-optional:hover .sheet-input {
+    background: oklch(0.96 0.02 245 / 75%);
+    box-shadow: 0 0 0 1.5pt oklch(0.96 0.02 245 / 75%), inset 0 0 0 0.5pt oklch(0.6 0.1 250 / 35%);
+  }
+  .sheet-input:hover::placeholder,
+  .sheet-input:focus::placeholder,
+  .sheet-optional:hover .sheet-input::placeholder {
+    color: oklch(0.62 0.05 250);
+  }
+  .sheet-input:focus {
+    background: white;
+    box-shadow:
+      0 0 0 1.5pt white,
+      0 0 0 2.5pt oklch(0.6 0.12 250 / 55%);
+  }
+  .sheet-invalid {
+    box-shadow: 0 0 0 1.5pt oklch(0.62 0.2 25 / 60%) !important;
+  }
+  /* Empty optional blocks (title, intro, closing) take no space until hovered — just like on paper. */
+  .sheet-optional {
+    position: relative;
+    transition: max-height 0.2s ease;
+  }
+  .sheet-optional-empty:not(:hover):not(:focus-within) {
+    max-height: 3pt;
+    overflow: hidden;
+  }
+  .sheet-optional-empty:not([data-editable]) {
+    display: none;
+  }
+
+  /* Zones: dashed outline and an edit chip in the margin. */
+  .sheet-zone {
+    position: relative;
+    border-radius: 3pt;
+    outline: 1px dashed transparent;
+    outline-offset: 3pt;
+    transition:
+      outline-color 0.15s ease,
+      background 0.15s ease;
+  }
+  .sheet-zone:hover,
+  .sheet-zone-open {
+    outline-color: oklch(0.6 0.12 250 / 55%);
+    background: oklch(0.96 0.02 245 / 45%);
+  }
+  .sheet-zone-invalid {
+    outline-color: oklch(0.62 0.2 25 / 70%);
+  }
+  .sheet-zone-chip {
+    position: absolute;
+    top: -5pt;
+    transform: translateY(-100%);
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--primary);
+    background: var(--neu-surface);
+    box-shadow: var(--neu-raised-sm);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+  }
+  .sheet-zone:hover > .sheet-zone-chip,
+  .sheet-zone-open > .sheet-zone-chip {
+    opacity: 1;
+  }
+
+  /* Row handles live outside the paper. */
+  .sheet-gutter {
+    position: absolute;
+    top: -2px;
+    display: flex;
+    gap: 3px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    font-family: var(--font-sans);
+  }
+  /* Handles sit in the page margins: left for order/removal, right for VAT & options. */
+  .sheet-gutter-left {
+    right: calc(100% + 2.5mm);
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+  }
+  .sheet-gutter-right {
+    left: calc(100% + 2mm);
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .sheet-gutter .neu-chip {
+    height: 1.35rem;
+    min-width: 1.35rem;
+    font-size: 0.62rem;
+  }
+  .sheet-row:hover > .sheet-gutter,
+  .sheet-row:focus-within > .sheet-gutter {
+    opacity: 1;
+  }
+  .sheet-row:hover {
+    background: oklch(0.97 0.015 245 / 55%);
+  }
+
+  .sheet-add {
+    position: relative;
+    height: 14pt;
+    display: flex;
+    align-items: center;
+    font-family: var(--font-sans);
+  }
+  .sheet-add-line {
+    position: absolute;
+    inset-inline: 0;
+    border-top: 1px dashed oklch(0.6 0.12 250 / 0%);
+    transition: border-color 0.15s ease;
+  }
+  .sheet-add-buttons {
+    position: relative;
+    display: flex;
+    gap: 4px;
+    margin-inline: auto;
+    opacity: 0;
+    transform: translateY(2px);
+    transition:
+      opacity 0.15s ease,
+      transform 0.15s ease;
+  }
+  .sheet-add:hover .sheet-add-line {
+    border-color: oklch(0.6 0.12 250 / 50%);
+  }
+  .sheet-add:hover .sheet-add-buttons,
+  .sheet-add:focus-within .sheet-add-buttons {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Rubber stamp for settled documents (on screen only). */
+  .sheet-stamp {
+    position: absolute;
+    top: 64mm;
+    left: 32mm;
+    padding: 2mm 5mm;
+    border: 1.2mm double currentColor;
+    border-radius: 3mm;
+    font-family: var(--font-display);
+    font-size: 22pt;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transform: rotate(-12deg);
+    opacity: 0.55;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='s'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.2 1.6'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23s)'/%3E%3C/svg%3E");
+  }
+}
