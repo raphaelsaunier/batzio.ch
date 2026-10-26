@@ -13,7 +13,7 @@ struct WelcomeView: View {
                 VStack(spacing: 10) {
                     CoinView(size: 180)
                     CoinTagline()
-                    Text(L("Born from a deep aversion to accounting. Drop a receipt, say what happened, Batzi does the books."))
+                    Text(L("For people who would rather spend their time on something other than accounting. Drop a receipt, say what happened, Batzi does the books."))
                         .font(.bzBody(16))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)

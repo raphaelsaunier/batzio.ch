@@ -1,6 +1,8 @@
 import { Bot, Check, Loader2, MessageSquareText, Paperclip, Plug, Sparkles, Truck } from "lucide-react";
+import { Batzi, type BatziMood } from "@/components/fun/batzi";
 import { cn } from "@/lib/utils";
 import { getT } from "@/lib/i18n/server";
+import { Figures } from "./figures";
 
 // ------------------------------------------------------------------ agents
 
@@ -11,6 +13,7 @@ interface Chat {
   attachment?: string;
   tools: string[];
   answer: string;
+  mood: BatziMood;
 }
 
 export async function AgentChats() {
@@ -22,6 +25,7 @@ export async function AgentChats() {
       ask: t("Invoice Bergsicht Hotels for 4 hours of consulting at 180 and issue it."),
       tools: [t("Found Bergsicht Hotels AG"), t("Created the invoice"), t("Issued it")],
       answer: t("Done: INV-2026-0008 for CHF 778.30 including 8.1 % VAT, due on 25.11.2026. The PDF with the QR-bill is ready."),
+      mood: "happy",
     },
     {
       client: t("Batzi, built into every screen"),
@@ -29,6 +33,7 @@ export async function AgentChats() {
       ask: t("Who still owes me money?"),
       tools: [t("Checked the open invoices")],
       answer: t("CHF 3’770.50 across four invoices: Rhein Logistik AG 1’827.95 (one 9 days late), Atelier Morel Sàrl 1’456.10 (13 days late), Kaffeerösterei Lindenhof 486.45. Shall I prepare reminders for the two late ones?"),
+      mood: "thinking",
     },
     {
       client: t("Your own assistant"),
@@ -37,6 +42,7 @@ export async function AgentChats() {
       attachment: "sbb-ticket.jpg",
       tools: [t("Read the ticket"), t("Booked the expense")],
       answer: t("Booked CHF 87.60 to travel expenses (6640), including CHF 6.56 input VAT, with the ticket attached and linked to the project."),
+      mood: "wink",
     },
   ];
   return (
@@ -61,7 +67,12 @@ export async function AgentChats() {
               </li>
             ))}
           </ul>
-          <div className="bg-muted mr-6 rounded-2xl rounded-bl-md px-3.5 py-2.5 text-sm leading-6">{c.answer}</div>
+          <div className="flex items-end gap-2">
+            <Batzi mood={c.mood} className="size-9 shrink-0" />
+            <div className="bg-muted min-w-0 rounded-2xl rounded-bl-md px-3.5 py-2.5 text-sm leading-6">
+              <Figures text={c.answer} />
+            </div>
+          </div>
         </figure>
       ))}
     </div>

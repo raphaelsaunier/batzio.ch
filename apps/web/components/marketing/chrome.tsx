@@ -16,7 +16,7 @@ export async function MarketingHeader({ home = "" }: { home?: string }) {
     ["#agents", t("AI agents")],
     ["#api", t("API")],
     ["#move-in", t("Move in")],
-    ["#pricing", t("Pricing")],
+    ["/pricing", t("Pricing")],
   ];
   return (
     <>
@@ -27,7 +27,7 @@ export async function MarketingHeader({ home = "" }: { home?: string }) {
           <nav className="hidden items-center gap-1 lg:flex" aria-label={t("Sections")}>
             {nav.map(([href, label]) => (
               <Button key={href} variant="ghost" size="sm" asChild>
-                <a href={`${home}${href}`}>{label}</a>
+                <a href={href.startsWith("/") ? href : `${home}${href}`}>{label}</a>
               </Button>
             ))}
           </nav>
@@ -60,23 +60,25 @@ export async function MarketingFooter() {
   const t = await getT();
   return (
     <footer className="border-t">
-      <div className="text-muted-foreground mx-auto flex max-w-6xl flex-col gap-3 px-4 py-8 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <Brand />
-        <nav className="flex flex-wrap gap-x-5 gap-y-2" aria-label={t("More")}>
-          <Link href="/#pricing" className="hover:text-foreground">
-            {t("Pricing")}
-          </Link>
-          <Link href="/vs/bexio" className="hover:text-foreground">
-            Batzio vs bexio
-          </Link>
-          <Link href="/docs/api" className="hover:text-foreground">
-            {t("API")}
-          </Link>
-        </nav>
-        <LocaleSwitcher compact className="sm:hidden" />
-        <span>
-          © {new Date().getFullYear()} Batzio · {t("Made in Switzerland, with a deep aversion to accounting.")}
-        </span>
+      <div className="text-muted-foreground mx-auto max-w-6xl space-y-4 px-4 py-8 text-sm sm:px-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <Brand />
+          <nav className="flex flex-wrap gap-x-5 gap-y-2" aria-label={t("More")}>
+            <Link href="/pricing" className="hover:text-foreground">
+              {t("Pricing")}
+            </Link>
+            <Link href="/vs/bexio" className="hover:text-foreground">
+              Batzio vs bexio
+            </Link>
+            <Link href="/docs/api" className="hover:text-foreground">
+              {t("API")}
+            </Link>
+          </nav>
+          <LocaleSwitcher compact className="sm:hidden" />
+        </div>
+        <p>
+          © {new Date().getFullYear()} Batzio · {t("Made in Switzerland, for people who would rather spend their time on something other than accounting.")}
+        </p>
       </div>
     </footer>
   );

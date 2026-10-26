@@ -101,7 +101,7 @@ export function SpeedDemo() {
             <Badge variant="outline" className={cn("hidden sm:inline-flex", TONE_CLASSES[r.tone])}>
               {t(r.status)}
             </Badge>
-            <span className="num w-20 text-right font-medium">{r.total}</span>
+            <span className="num w-20 text-right font-semibold">{r.total}</span>
           </li>
         ))}
         {!rows.length && <li className="text-muted-foreground px-4 py-6 text-center text-sm">{t("Nothing matches.")}</li>}

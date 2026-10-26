@@ -1,6 +1,7 @@
 import { Check, Minus, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getT } from "@/lib/i18n/server";
+import { Figures } from "./figures";
 
 /** One side of a comparison row: a mark (yes, no, coming soon, one day) and/or a short text. */
 export interface Cell {
@@ -39,7 +40,11 @@ async function CellView({ cell, side, win }: { cell: Cell; side: string; win?: b
       <span className={cn("flex items-start gap-1.5", badge && "mt-1", win && "text-foreground font-semibold")}>
         {cell.mark === "yes" && <Check className="text-success mt-1 size-4 shrink-0" aria-label={cell.text ? undefined : t("Yes")} />}
         {cell.mark === "no" && <Minus className="text-muted-foreground mt-1 size-4 shrink-0" aria-label={t("Not included")} />}
-        {cell.text && <span className={cn(!win && "text-muted-foreground", cell.mark === "yes" && !win && "text-foreground")}>{cell.text}</span>}
+        {cell.text && (
+          <span className={cn(!win && "text-muted-foreground", cell.mark === "yes" && !win && "text-foreground")}>
+            <Figures text={cell.text} />
+          </span>
+        )}
       </span>
     </div>
   );

@@ -125,7 +125,7 @@ public sealed partial class WelcomeView : UserControl
         var column = Ui.Stack(18,
             new CoinControl(170) { HorizontalAlignment = HorizontalAlignment.Center },
             new CoinTagline(),
-            Ui.Muted(L("Born from a deep aversion to accounting. Drop a receipt, say what happened, Batzi does the books."), 15),
+            Ui.Muted(L("For people who would rather spend their time on something other than accounting. Drop a receipt, say what happened, Batzi does the books."), 15),
             ExperimentNotice(),
             Ui.Card(Ui.Stack(12, tabs, form), 22),
             server);

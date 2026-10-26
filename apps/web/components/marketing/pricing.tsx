@@ -2,9 +2,42 @@ import { ArrowRight, Check, Code, HeartHandshake, WifiOff } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { getT } from "@/lib/i18n/server";
+import { Figures } from "./figures";
 
-/** Pricing: per person for small teams, one flat price up to 50, free where it matters. */
-export async function Pricing() {
+/** The whole price list in one row, for the landing page; the details live on /pricing. */
+export async function PricingSummary() {
+  const t = await getT();
+  const cells = [
+    { label: t("1 to 5 users"), price: "CHF 5.–", unit: t("per user and month") },
+    { label: t("6 to 50 users"), price: "CHF 50.–", unit: t("per month, all in") },
+    { label: t("Offline apps, self-hosting and non-profits"), price: t("Free"), unit: t("forever") },
+  ];
+  return (
+    <div className="mx-auto max-w-4xl">
+      <h2 id="pricing" className="sr-only">
+        {t("Pricing")}
+      </h2>
+      <dl className="neu-card grid divide-y overflow-hidden text-left sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        {cells.map((c) => (
+          <div key={c.label} className="flex flex-col gap-1 p-5">
+            <dt className="text-muted-foreground text-sm">{c.label}</dt>
+            <dd className="font-display num text-3xl font-semibold tracking-tight">{c.price}</dd>
+            <dd className="text-muted-foreground text-sm">{c.unit}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="text-muted-foreground mt-3 text-center text-sm">
+        {t("Every plan has every feature.")}{" "}
+        <Link href="/pricing" className="text-primary inline-flex items-center gap-1 font-medium hover:underline">
+          {t("See full pricing")} <ArrowRight className="size-3.5" />
+        </Link>
+      </p>
+    </div>
+  );
+}
+
+/** The plans in detail: per person for small teams, one flat price up to 50, free where it matters. */
+export async function PricingPlans() {
   const t = await getT();
   const plans = [
     { name: t("Small teams"), price: "5.–", unit: t("per user and month"), detail: t("1 to 5 users, so CHF 25.– a month at most."), featured: false },
@@ -24,10 +57,12 @@ export async function Pricing() {
             <h3 className="font-display text-lg font-semibold">{p.name}</h3>
             <p className="mt-4 flex items-baseline gap-1.5">
               <span className="text-muted-foreground text-sm font-semibold">CHF</span>
-              <span className="font-display num text-5xl font-bold tracking-tight">{p.price}</span>
+              <span className="font-display num text-5xl font-semibold tracking-tight">{p.price}</span>
             </p>
             <p className="text-muted-foreground text-sm">{p.unit}</p>
-            <p className="mt-4 text-sm leading-6">{p.detail}</p>
+            <p className="mt-4 text-sm leading-6">
+              <Figures text={p.detail} />
+            </p>
             <ul className="mt-5 grid grid-cols-2 gap-x-3 gap-y-1.5 border-t pt-4">
               {included.map((i) => (
                 <li key={i} className="text-muted-foreground flex items-center gap-1.5 text-xs">
@@ -54,12 +89,7 @@ export async function Pricing() {
           </ul>
         </div>
       </div>
-      <p className="text-muted-foreground text-center text-sm">
-        {t("Every plan has every feature. Prices in Swiss francs.")}{" "}
-        <Link href="/vs/bexio" className="text-primary inline-flex items-center gap-1 font-medium hover:underline">
-          {t("See how Batzio compares with bexio")} <ArrowRight className="size-3.5" />
-        </Link>
-      </p>
+      <p className="text-muted-foreground text-center text-sm">{t("Every plan has every feature. Prices in Swiss francs.")}</p>
     </div>
   );
 }

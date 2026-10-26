@@ -1,0 +1,120 @@
+import type { CatalogRow } from "./catalog";
+
+// Rows are [en, de, fr, it]: the pricing page, the landing-page price summary and the feature-first bexio comparison.
+// Marketing register, like the rest of the landing page: du / vous / tu.
+export const ROWS: CatalogRow[] = [
+  // Landing-page summary
+  ["1 to 5 users", "1 bis 5 Benutzer", "1 à 5 utilisateurs", "Da 1 a 5 utenti"],
+  ["6 to 50 users", "6 bis 50 Benutzer", "6 à 50 utilisateurs", "Da 6 a 50 utenti"],
+  ["Offline apps, self-hosting and non-profits", "Offline-Apps, eigener Server und Non-Profits", "Apps hors ligne, auto-hébergement et organisations à but non lucratif", "App offline, server proprio e non profit"],
+  ["forever", "für immer", "pour toujours", "per sempre"],
+  ["Every plan has every feature.", "Jedes Abo hat alle Funktionen.", "Chaque formule comprend toutes les fonctions.", "Ogni piano include tutte le funzioni."],
+  ["See full pricing", "Alle Preise im Detail", "Tous les prix en détail", "Tutti i prezzi nel dettaglio"],
+
+  // Pricing page
+  ["Calculator", "Rechner", "Calculateur", "Calcolatore"],
+  ["Work out your price", "Rechne deinen Preis aus", "Calculez votre prix", "Calcola il tuo prezzo"],
+  ["Slide to the size of your team.", "Schieb den Regler auf die Grösse deines Teams.", "Faites glisser le curseur sur la taille de votre équipe.", "Sposta il cursore sulla dimensione del tuo team."],
+  ["How many people use Batzio?", "Wie viele Leute nutzen Batzio?", "Combien de personnes utilisent Batzio ?", "Quante persone usano Batzio?"],
+  ["CHF 5.– per user and month, up to 5 users.", "CHF 5.– pro Benutzer und Monat, bis 5 Benutzer.", "CHF 5.– par utilisateur et par mois, jusqu’à 5 utilisateurs.", "CHF 5.– per utente al mese, fino a 5 utenti."],
+  ["One flat price from 6 to 50 users.", "Ein Pauschalpreis von 6 bis 50 Benutzern.", "Un prix forfaitaire de 6 à 50 utilisateurs.", "Un prezzo forfettario da 6 a 50 utenti."],
+  ["per month", "pro Monat", "par mois", "al mese"],
+  ["per year", "pro Jahr", "par an", "all’anno"],
+  ["Everything, in every plan", "Alles, in jedem Abo", "Tout, dans chaque formule", "Tutto, in ogni piano"],
+  ["No add-ons, no feature tiers: every plan comes with all of it.", "Keine Zusatzoptionen, keine Funktionsstufen: Jedes Abo hat alles.", "Pas d’options, pas de niveaux de fonctions : chaque formule comprend tout.", "Niente opzioni aggiuntive, niente livelli di funzioni: ogni piano include tutto."],
+  ["Questions", "Fragen", "Questions", "Domande"],
+  ["Good to know", "Gut zu wissen", "Bon à savoir", "Buono a sapersi"],
+  ["The short answers about prices, free use and moving in.", "Die kurzen Antworten zu Preisen, Gratis-Nutzung und Umzug.", "Les réponses courtes sur les prix, l’utilisation gratuite et le déménagement.", "Le risposte brevi su prezzi, uso gratuito e trasloco."],
+  ["Is anything extra?", "Kostet etwas extra?", "Y a-t-il des suppléments ?", "C’è qualcosa di extra?"],
+  [
+    "No add-ons and no feature tiers: payroll, projects, stock, the AI assistant, the API and the apps come with every plan. The price only depends on how many people use Batzio.",
+    "Keine Zusatzoptionen und keine Funktionsstufen: Lohn, Projekte, Lager, KI-Assistent, API und Apps sind in jedem Abo dabei. Der Preis hängt nur davon ab, wie viele Leute Batzio nutzen.",
+    "Ni options ni niveaux de fonctions : salaires, projets, stock, assistant IA, API et apps sont inclus dans chaque formule. Le prix dépend uniquement du nombre de personnes qui utilisent Batzio.",
+    "Niente opzioni aggiuntive e niente livelli di funzioni: stipendi, progetti, magazzino, assistente IA, API e app sono inclusi in ogni piano. Il prezzo dipende solo da quante persone usano Batzio.",
+  ],
+  ["What happens when we grow past five people?", "Was passiert, wenn wir mehr als fünf werden?", "Que se passe-t-il au-delà de cinq personnes ?", "Cosa succede se superiamo le cinque persone?"],
+  [
+    "From the sixth person to the fiftieth, Batzio costs CHF 50.– a month in total, however many of you there are.",
+    "Von der sechsten bis zur fünfzigsten Person kostet Batzio insgesamt CHF 50.– im Monat, egal wie viele ihr seid.",
+    "De la sixième à la cinquantième personne, Batzio coûte CHF 50.– par mois au total, quel que soit votre nombre.",
+    "Dalla sesta alla cinquantesima persona, Batzio costa in tutto CHF 50.– al mese, indipendentemente da quanti siete.",
+  ],
+  ["Are the offline apps really free?", "Sind die Offline-Apps wirklich gratis?", "Les apps hors ligne sont-elles vraiment gratuites ?", "Le app offline sono davvero gratis?"],
+  [
+    "Yes. The desktop and mobile apps can keep a company’s books on your own device — no account, no subscription.",
+    "Ja. Die Desktop- und Mobile-Apps können die Buchhaltung einer Firma auf deinem eigenen Gerät führen – ohne Konto, ohne Abo.",
+    "Oui. Les apps pour ordinateur et mobile peuvent tenir la comptabilité d’une entreprise sur votre propre appareil – sans compte, sans abonnement.",
+    "Sì. Le app per computer e smartphone possono tenere la contabilità di un’azienda sul tuo dispositivo – senza account, senza abbonamento.",
+  ],
+  ["Can we run Batzio ourselves?", "Können wir Batzio selbst betreiben?", "Pouvons-nous héberger Batzio nous-mêmes ?", "Possiamo gestire Batzio da soli?"],
+  [
+    "Yes. Batzio is open source under the AGPL-3.0, and the instructions come with the source code. Batzio itself costs nothing; you pay for your own hosting and, if you want Batzi, your own Claude API key.",
+    "Ja. Batzio ist Open Source unter der AGPL-3.0, die Anleitung liegt dem Quellcode bei. Batzio selbst kostet nichts; du zahlst dein eigenes Hosting und, wenn du Batzi willst, deinen eigenen Claude-API-Schlüssel.",
+    "Oui. Batzio est open source sous licence AGPL-3.0, et les instructions accompagnent le code source. Batzio lui-même ne coûte rien ; vous payez votre propre hébergement et, si vous voulez Batzi, votre propre clé API Claude.",
+    "Sì. Batzio è open source con licenza AGPL-3.0 e le istruzioni sono incluse nel codice sorgente. Batzio in sé non costa nulla; paghi il tuo hosting e, se vuoi Batzi, la tua chiave API Claude.",
+  ],
+  ["Can I bring my data with me?", "Kann ich meine Daten mitnehmen?", "Puis-je apporter mes données ?", "Posso portare con me i miei dati?"],
+  [
+    "Yes. Moving in from your current accounting software takes one click: contacts, products, projects, documents with payments, bills, expenses and bookings arrive with their numbers.",
+    "Ja. Der Umzug aus deiner bisherigen Buchhaltungssoftware dauert einen Klick: Kontakte, Produkte, Projekte, Dokumente mit Zahlungen, Lieferantenrechnungen, Spesen und Buchungen kommen mit ihren Nummern an.",
+    "Oui. Le déménagement depuis votre logiciel de comptabilité actuel prend un clic : contacts, produits, projets, documents avec paiements, factures fournisseurs, dépenses et écritures arrivent avec leurs numéros.",
+    "Sì. Il trasloco dal tuo attuale software di contabilità richiede un clic: contatti, prodotti, progetti, documenti con pagamenti, fatture fornitori, spese e registrazioni arrivano con i loro numeri.",
+  ],
+  ["And if I want to leave?", "Und wenn ich gehen will?", "Et si je veux partir ?", "E se voglio andarmene?"],
+  ["See the full comparison", "Zum ganzen Vergleich", "Voir la comparaison complète", "Vedi il confronto completo"],
+
+  // Feature-first comparison
+  ["Batzio vs bexio, feature by feature.", "Batzio vs bexio, Funktion für Funktion.", "Batzio face à bexio, fonction par fonction.", "Batzio vs bexio, funzione per funzione."],
+  [
+    "An assistant that books for you, apps that work offline, a history you can undo and the source code to run it yourself — next to bexio’s package comparison, including what we don’t do yet.",
+    "Ein Assistent, der für dich bucht, Apps, die offline funktionieren, ein Verlauf mit Rückgängig und der Quellcode zum Selbstbetreiben – neben dem Paketvergleich von bexio, inklusive dem, was wir noch nicht können.",
+    "Un assistant qui comptabilise pour vous, des apps qui fonctionnent hors ligne, un historique que l’on peut annuler et le code source pour l’héberger vous-même – face à la comparaison des forfaits de bexio, y compris ce que nous ne faisons pas encore.",
+    "Un assistente che contabilizza per te, app che funzionano offline, una cronologia che puoi annullare e il codice sorgente per gestirlo da te – accanto al confronto dei pacchetti di bexio, compreso quello che non facciamo ancora.",
+  ],
+  ["does the booking from a sentence, a photo or an email", "bucht aus einem Satz, einem Foto oder einer E-Mail", "comptabilise à partir d’une phrase, d’une photo ou d’un e-mail", "contabilizza da una frase, una foto o un’e-mail"],
+  ["for every change, in a tamper-evident history", "für jede Änderung, in einem fälschungssicheren Verlauf", "pour chaque modification, dans un historique infalsifiable", "per ogni modifica, in una cronologia a prova di manomissione"],
+  ["open source: read every line, run it yourself", "Open Source: jede Zeile lesen, selbst betreiben", "open source : lisez chaque ligne, hébergez-le vous-même", "open source: leggi ogni riga, gestiscilo da te"],
+  ["Only in Batzio", "Nur in Batzio", "Seulement dans Batzio", "Solo in Batzio"],
+  ["What bexio’s comparison doesn’t list", "Was im Vergleich von bexio fehlt", "Ce que la comparaison de bexio ne mentionne pas", "Ciò che il confronto di bexio non elenca"],
+  [
+    "Six things you get with Batzio that you won’t find in bexio’s package comparison.",
+    "Sechs Dinge, die du mit Batzio bekommst und im Paketvergleich von bexio nicht findest.",
+    "Six choses que vous obtenez avec Batzio et que vous ne trouverez pas dans la comparaison des forfaits de bexio.",
+    "Sei cose che ottieni con Batzio e che non trovi nel confronto dei pacchetti di bexio.",
+  ],
+  [
+    "Drop a receipt, forward an email or type one sentence in any of four languages. Batzi books it, and asks before anything that can’t be undone.",
+    "Beleg reinziehen, E-Mail weiterleiten oder einen Satz tippen, in einer von vier Sprachen. Batzi bucht es und fragt vor allem nach, was sich nicht rückgängig machen lässt.",
+    "Glissez un justificatif, transférez un e-mail ou tapez une phrase, dans l’une des quatre langues. Batzi le comptabilise et demande avant tout ce qui ne peut pas être annulé.",
+    "Trascina una ricevuta, inoltra un’e-mail o scrivi una frase, in una delle quattro lingue. Batzi la contabilizza e chiede prima di tutto ciò che non si può annullare.",
+  ],
+  ["Your AI tools, connected", "Deine KI-Tools, verbunden", "Vos outils d’IA, connectés", "I tuoi strumenti IA, collegati"],
+  [
+    "Claude, ChatGPT and other assistants work in your books over MCP, with exactly the access you give them.",
+    "Claude, ChatGPT und andere Assistenten arbeiten per MCP in deiner Buchhaltung, mit genau den Rechten, die du ihnen gibst.",
+    "Claude, ChatGPT et d’autres assistants travaillent dans votre comptabilité via MCP, avec exactement les accès que vous leur donnez.",
+    "Claude, ChatGPT e altri assistenti lavorano nella tua contabilità tramite MCP, con esattamente gli accessi che dai loro.",
+  ],
+  [
+    "Desktop and mobile apps that keep your books on your own device, free forever.",
+    "Desktop- und Mobile-Apps, die deine Buchhaltung auf deinem eigenen Gerät führen, für immer gratis.",
+    "Des apps pour ordinateur et mobile qui gardent votre comptabilité sur votre propre appareil, gratuites pour toujours.",
+    "App per computer e smartphone che tengono la tua contabilità sul tuo dispositivo, gratis per sempre.",
+  ],
+  ["Every change, with undo", "Jede Änderung, mit Rückgängig", "Chaque modification, avec annulation", "Ogni modifica, con annullamento"],
+  [
+    "A tamper-evident history shows who changed what, when and from where — and lets you take it back.",
+    "Ein fälschungssicherer Verlauf zeigt, wer was wann und von wo geändert hat – und lässt dich es zurücknehmen.",
+    "Un historique infalsifiable montre qui a modifié quoi, quand et d’où – et vous permet de revenir en arrière.",
+    "Una cronologia a prova di manomissione mostra chi ha modificato cosa, quando e da dove – e ti permette di tornare indietro.",
+  ],
+  ["Duplicates caught", "Dubletten erkannt", "Doublons repérés", "Duplicati individuati"],
+  [
+    "The same receipt, reference or contact twice? Batzio notices and lets you merge or dismiss it.",
+    "Derselbe Beleg, dieselbe Referenz oder derselbe Kontakt zweimal? Batzio merkt es und lässt dich zusammenführen oder verwerfen.",
+    "Le même justificatif, la même référence ou le même contact en double ? Batzio le remarque et vous laisse fusionner ou ignorer.",
+    "La stessa ricevuta, lo stesso riferimento o lo stesso contatto due volte? Batzio se ne accorge e ti lascia unire o ignorare.",
+  ],
+  ["Open source & integrations", "Open Source & Integrationen", "Open source et intégrations", "Open source e integrazioni"],
+  ["And it costs less", "Und es kostet weniger", "Et ça coûte moins cher", "E costa meno"],
+];

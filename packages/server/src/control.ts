@@ -52,7 +52,7 @@ export const SESSION_TTL_DAYS = 30;
 
 const RESERVED_SLUGS = new Set([
   "api", "app", "admin", "docs", "login", "logout", "signup", "select", "settings", "static",
-  "assets", "_next", "mcp", "help", "status", "www", "new", "invite", "account", "favicon.ico",
+  "assets", "_next", "mcp", "help", "status", "www", "new", "invite", "account", "favicon.ico", "pricing",
 ]);
 
 export function slugify(value: string): string {

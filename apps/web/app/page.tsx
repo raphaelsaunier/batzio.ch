@@ -1,9 +1,9 @@
-import { ArrowRight, AtSign, BookOpen, Bot, Building2, FileCode2, FolderKanban, IdCard, Inbox, Keyboard, Landmark, Languages, MessageSquareText, Plug, QrCode, Search, ShieldCheck, Smartphone, Truck, Wallet, WifiOff, Zap } from "lucide-react";
+import { ArrowRight, AtSign, BookOpen, Bot, Building2, FileCode2, FolderKanban, IdCard, Inbox, Keyboard, Landmark, Languages, MessageSquareText, Plug, QrCode, Search, ShieldCheck, Smartphone, Truck, WifiOff, Zap } from "lucide-react";
 import Link from "next/link";
 import { CoinHero } from "@/components/brand/coin-hero";
 import { MarketingFooter, MarketingHeader, SectionHeading } from "@/components/marketing/chrome";
 import { NativeApps } from "@/components/marketing/devices";
-import { Pricing } from "@/components/marketing/pricing";
+import { PricingSummary } from "@/components/marketing/pricing";
 import { AgentChats, CompatCoverage, CompatDiff, McpConfig, MoveInSteps } from "@/components/marketing/sections";
 import { SpeedDemo } from "@/components/marketing/speed-demo";
 import { Button } from "@/components/ui/button";
@@ -67,6 +67,10 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      <section aria-labelledby="pricing" className="scroll-mt-20 px-4 pb-6 sm:px-6">
+        <PricingSummary />
+      </section>
+
       <section aria-labelledby="fast" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-20 sm:px-6">
         <SectionHeading
           id="fast"
@@ -108,7 +112,7 @@ export default async function LandingPage() {
             icon={Smartphone}
             kicker={t("Native apps")}
             title={t("At home on every screen you own.")}
-            text={t("Real apps for iPhone, iPad, Mac, Vision Pro, Android and Windows. The same data and the same four languages, everywhere.")}
+            text={t("Real apps for iPhone, iPad, Mac, Android and Windows. The same data and the same four languages, everywhere.")}
           />
           <NativeApps />
         </div>
@@ -209,19 +213,6 @@ export default async function LandingPage() {
               <FileCode2 /> {t("Explore the API")}
             </Link>
           </Button>
-        </div>
-      </section>
-
-      <section aria-labelledby="pricing" className="bg-hero scroll-mt-20 border-y py-20">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <SectionHeading
-            id="pricing"
-            icon={Wallet}
-            kicker={t("Pricing")}
-            title={t("Fair prices. Free where it matters.")}
-            text={t("Every plan has every feature — payroll, projects, stock, the AI assistant, the API. You only pay for the people who use it.")}
-          />
-          <Pricing />
         </div>
       </section>
 

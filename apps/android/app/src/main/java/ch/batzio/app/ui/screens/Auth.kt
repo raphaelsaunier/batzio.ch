@@ -151,7 +151,7 @@ fun WelcomeScreen(app: AppModel) {
         Coin(170.dp)
         CoinTagline()
         Text(
-            L("Born from a deep aversion to accounting. Drop a receipt, say what happened, Batzi does the books."),
+            L("For people who would rather spend their time on something other than accounting. Drop a receipt, say what happened, Batzi does the books."),
             style = MaterialTheme.typography.bodyLarge, color = LocalBz.current.mutedForeground, textAlign = TextAlign.Center, modifier = Modifier.widthIn(max = 440.dp),
         )
         ExperimentNotice()

@@ -1,4 +1,4 @@
-import { AppWindow, Glasses, Globe, Laptop, Smartphone, Tablet } from "lucide-react";
+import { AppWindow, Globe, Laptop, Smartphone, Tablet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getT } from "@/lib/i18n/server";
 
@@ -79,7 +79,6 @@ export async function NativeApps() {
     { icon: Tablet, label: "iPad" },
     { icon: Laptop, label: "Mac" },
     { icon: AppWindow, label: "Windows 11" },
-    { icon: Glasses, label: "Apple Vision Pro" },
     { icon: Globe, label: t("Web, offline too") },
   ];
   return (

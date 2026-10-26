@@ -186,7 +186,7 @@ export const ROWS: CatalogRow[] = [
   ["Low", "Tief", "Basse", "Bassa"],
   ["MCP", "MCP", "MCP", "MCP"],
   ["MCP for AI assistants", "MCP für KI-Assistenten", "MCP pour assistants IA", "MCP per assistenti IA"],
-  ["Made in Switzerland, with a deep aversion to accounting.", "Made in Switzerland, mit einer tiefen Abneigung gegen Buchhaltung.", "Fabriqué en Suisse, avec une profonde aversion pour la comptabilité.", "Fatto in Svizzera, con una profonda avversione per la contabilità."],
+  ["Made in Switzerland, for people who would rather spend their time on something other than accounting.", "Made in Switzerland, für alle, die ihre Zeit lieber mit etwas anderem als Buchhaltung verbringen.", "Fabriqué en Suisse, pour celles et ceux qui préfèrent passer leur temps à autre chose qu’à la comptabilité.", "Fatto in Svizzera, per chi preferisce dedicare il proprio tempo a qualcosa di diverso dalla contabilità."],
   ["Make an offer they can’t refuse.", "Mach ein Angebot, das sie nicht ablehnen können.", "Faites une offre qu’ils ne pourront pas refuser.", "Fai un’offerta che non potranno rifiutare."],
   ["Make it a bill", "Daraus eine Rechnung machen", "En faire une facture", "Trasformala in fattura"],
   ["Manual", "Manuell", "Manuel", "Manuale"],

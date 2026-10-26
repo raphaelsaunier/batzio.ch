@@ -17,5 +17,6 @@ import { ROWS as R_j } from "./catalog-j";
 import { ROWS as R_k } from "./catalog-k";
 import { ROWS as R_l } from "./catalog-l";
 import { ROWS as R_m } from "./catalog-m";
+import { ROWS as R_n } from "./catalog-n";
 
-export const CATALOG: CatalogRow[] = [...R_a, ...R_b, ...R_c, ...R_d, ...R_e, ...R_f, ...R_g, ...R_h, ...R_i, ...R_j, ...R_k, ...R_l, ...R_m];
+export const CATALOG: CatalogRow[] = [...R_a, ...R_b, ...R_c, ...R_d, ...R_e, ...R_f, ...R_g, ...R_h, ...R_i, ...R_j, ...R_k, ...R_l, ...R_m, ...R_n];

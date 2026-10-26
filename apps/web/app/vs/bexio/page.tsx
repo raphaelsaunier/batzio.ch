@@ -1,9 +1,11 @@
-import { ArrowRight, Bot, Calculator, Code, FileText, HeartHandshake, Landmark, LifeBuoy, Scale, ShoppingCart, Truck, Users, Wallet, WifiOff } from "lucide-react";
+import { ArrowRight, Bot, Calculator, Code, Copy, FileText, History, Landmark, LifeBuoy, Plug, Scale, Sparkles, Truck, Users, Wallet, WifiOff } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MarketingFooter, MarketingHeader, SectionHeading } from "@/components/marketing/chrome";
 import { ComparisonTable, type Group } from "@/components/marketing/comparison";
+import { Figures } from "@/components/marketing/figures";
 import { MoveInSteps } from "@/components/marketing/sections";
+import { YearCosts } from "@/components/marketing/year-costs";
 import { Button } from "@/components/ui/button";
 import { getT } from "@/lib/i18n/server";
 import { shareMetadata } from "@/lib/share";
@@ -34,32 +36,12 @@ export default async function VsBexioPage() {
 
   const groups: Group[] = [
     {
-      title: t("Price & freedom"),
-      icon: Wallet,
-      rows: [
-        { label: t("1 user, per month"), them: { text: plan("35.–", "45.–") }, us: { text: chf("5.–") }, win: true },
-        { label: t("5 users, per month"), them: { text: plan("69.–", "79.–") }, us: { text: chf("25.–") }, win: true },
-        { label: t("25 users, per month"), them: { text: plan("119.–", "129.–") }, us: { text: chf("50.–") }, win: true },
-        { label: t("50 users, per month"), them: { text: t("On request") }, us: { text: chf("50.–") }, win: true },
-        { label: t("Every feature in every plan"), them: { mark: "no", text: t("Four packages, plus add-ons") }, us: { mark: "yes" }, win: true },
-        {
-          label: t("Associations & non-profits"),
-          them: { text: t("50 % off in the first year for new customers, limited to 200 associations, until 31.12.2026") },
-          us: { mark: "yes", text: t("Free") },
-          win: true,
-        },
-        { label: t("Open source"), them: { mark: "no" }, us: { mark: "yes" }, win: true },
-        { label: t("Run it on your own server"), them: { mark: "no", text: t("Cloud-based") }, us: { mark: "yes", text: t("Free") }, win: true },
-        { label: t("Works offline"), them: { mark: "no", text: t("Cloud-based") }, us: { mark: "yes", text: t("Desktop and mobile apps, free forever") }, win: true },
-        { label: t("Getting set up"), them: { text: t("Setup services from CHF 220.– each") }, us: { mark: "yes", text: t("Move in from bexio in one click, free") }, win: true },
-      ],
-    },
-    {
       title: t("Apps & AI"),
       icon: Bot,
       rows: [
         { label: t("Web app"), them: { mark: "yes" }, us: { mark: "yes" } },
-        { label: t("Native apps"), them: { mark: "yes", text: t("bexio Go for phones") }, us: { mark: "yes", text: "iPhone, iPad, Mac, Vision Pro, Android, Windows" }, win: true },
+        { label: t("Native apps"), them: { mark: "yes", text: t("bexio Go for phones") }, us: { mark: "yes", text: "iPhone, iPad, Mac, Android, Windows" }, win: true },
+        { label: t("Works offline"), them: { mark: "no", text: t("Cloud-based") }, us: { mark: "yes", text: t("Desktop and mobile apps, free forever") }, win: true },
         {
           label: t("AI reads receipts and QR-bills"),
           them: { text: t("From Advanced: 50, 100 or unlimited scans a month, by package") },
@@ -128,9 +110,12 @@ export default async function VsBexioPage() {
       ],
     },
     {
-      title: t("Integrations"),
-      icon: ShoppingCart,
+      title: t("Open source & integrations"),
+      icon: Plug,
       rows: [
+        { label: t("Open source"), them: { mark: "no" }, us: { mark: "yes" }, win: true },
+        { label: t("Run it on your own server"), them: { mark: "no", text: t("Cloud-based") }, us: { mark: "yes", text: t("Free") }, win: true },
+        { label: t("Getting set up"), them: { text: t("Setup services from CHF 220.– each") }, us: { mark: "yes", text: t("Move in from bexio in one click, free") }, win: true },
         { label: t("REST API"), them: { mark: "yes" }, us: { mark: "yes", text: t("OpenAPI, plus your bexio integrations work unchanged") }, win: true },
         { label: t("App marketplace"), them: { mark: "yes", text: t("50+ to 100+ apps, by package") }, us: { mark: "soon" } },
       ],
@@ -148,13 +133,32 @@ export default async function VsBexioPage() {
         },
       ],
     },
+    {
+      title: t("Price"),
+      icon: Wallet,
+      rows: [
+        { label: t("1 user, per month"), them: { text: plan("35.–", "45.–") }, us: { text: chf("5.–") }, win: true },
+        { label: t("5 users, per month"), them: { text: plan("69.–", "79.–") }, us: { text: chf("25.–") }, win: true },
+        { label: t("25 users, per month"), them: { text: plan("119.–", "129.–") }, us: { text: chf("50.–") }, win: true },
+        { label: t("50 users, per month"), them: { text: t("On request") }, us: { text: chf("50.–") }, win: true },
+        { label: t("Every feature in every plan"), them: { mark: "no", text: t("Four packages, plus add-ons") }, us: { mark: "yes" }, win: true },
+        {
+          label: t("Associations & non-profits"),
+          them: { text: t("50 % off in the first year for new customers, limited to 200 associations, until 31.12.2026") },
+          us: { mark: "yes", text: t("Free") },
+          win: true,
+        },
+      ],
+    },
   ];
 
-  const years: [string, string, string, string][] = [
-    [t("1 user"), `${chf("420.–")} · Basic`, `${chf("1’128.–")} · ${t("{package} + payroll", { package: "Optima" })}`, chf("60.–")],
-    [t("5 users"), `${chf("828.–")} · Optima`, `${chf("1’128.–")} · ${t("{package} + payroll", { package: "Optima" })}`, chf("300.–")],
-    [t("25 users"), `${chf("1’428.–")} · Ultimate`, `${chf("1’428.–")} · Ultimate`, chf("600.–")],
-    [t("50 users"), t("On request"), t("On request"), chf("600.–")],
+  const only = [
+    { icon: Sparkles, title: t("An assistant that does the booking"), text: t("Drop a receipt, forward an email or type one sentence in any of four languages. Batzi books it, and asks before anything that can’t be undone.") },
+    { icon: Plug, title: t("Your AI tools, connected"), text: t("Claude, ChatGPT and other assistants work in your books over MCP, with exactly the access you give them.") },
+    { icon: WifiOff, title: t("Works offline"), text: t("Desktop and mobile apps that keep your books on your own device, free forever.") },
+    { icon: History, title: t("Every change, with undo"), text: t("A tamper-evident history shows who changed what, when and from where — and lets you take it back.") },
+    { icon: Copy, title: t("Duplicates caught"), text: t("The same receipt, reference or contact twice? Batzio notices and lets you merge or dismiss it.") },
+    { icon: Code, title: t("Open source"), text: t("Read every line, or run Batzio on your own server at no cost.") },
   ];
 
   return (
@@ -167,19 +171,19 @@ export default async function VsBexioPage() {
           <span className="sticker">
             <Scale className="text-primary size-3.5" /> Batzio vs bexio
           </span>
-          <h1 className="font-display mt-5 text-4xl leading-[1.05] font-bold tracking-tight text-balance sm:text-6xl">{t("Swiss books like bexio. At a fraction of the price.")}</h1>
+          <h1 className="font-display mt-5 text-4xl leading-[1.05] font-bold tracking-tight text-balance sm:text-6xl">{t("Batzio vs bexio, feature by feature.")}</h1>
           <p className="text-muted-foreground mx-auto mt-6 max-w-2xl text-lg leading-8 text-balance">
-            {t("Open source, works offline, free for non-profits, with an assistant that does the booking for you. Here’s how the two compare, row by row — including what we don’t do yet.")}
+            {t("An assistant that books for you, apps that work offline, a history you can undo and the source code to run it yourself — next to bexio’s package comparison, including what we don’t do yet.")}
           </p>
-          <div className="bg-border mt-12 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border text-left sm:grid-cols-4">
+          <div className="bg-border mt-12 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border text-left lg:grid-cols-4">
             {[
-              [chf("5.–"), t("for one user a month. bexio: from CHF 35.–")],
-              [chf("50.–"), t("for 25 users a month. bexio: CHF 119.–")],
-              [chf("0.–"), t("for associations. bexio: 50 % off in the first year")],
+              ["Batzi", t("does the booking from a sentence, a photo or an email")],
               [t("Offline"), t("desktop and mobile apps, free. bexio is cloud-based")],
+              [t("Undo"), t("for every change, in a tamper-evident history")],
+              ["AGPL", t("open source: read every line, run it yourself")],
             ].map(([k, v]) => (
               <div key={v} className="bg-card p-5">
-                <div className="font-display num text-2xl font-bold tracking-tight sm:text-3xl">{k}</div>
+                <div className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">{k}</div>
                 <div className="text-muted-foreground mt-1 text-sm">{v}</div>
               </div>
             ))}
@@ -187,45 +191,24 @@ export default async function VsBexioPage() {
         </div>
       </section>
 
-      <section aria-labelledby="year" className="mx-auto max-w-5xl scroll-mt-20 px-4 py-14 sm:px-6">
+      <section aria-labelledby="only" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14 sm:px-6">
         <SectionHeading
-          id="year"
-          icon={Wallet}
-          kicker={t("Pricing")}
-          title={t("What a year costs")}
-          text={t("bexio on the annual plan, excl. VAT. “Like for like” is the cheapest bexio package with what every Batzio plan includes, such as purchase orders, supplier bills and payroll.")}
+          id="only"
+          icon={Sparkles}
+          kicker={t("Only in Batzio")}
+          title={t("What bexio’s comparison doesn’t list")}
+          text={t("Six things you get with Batzio that you won’t find in bexio’s package comparison.")}
         />
-        <div className="neu-card overflow-x-auto">
-          <table className="w-full min-w-[34rem] text-left text-sm">
-            <thead className="text-muted-foreground border-b text-xs">
-              <tr>
-                <th scope="col" className="px-5 py-3 font-semibold">
-                  {t("Team")}
-                </th>
-                <th scope="col" className="px-5 py-3 font-semibold">
-                  {t("bexio, cheapest package")}
-                </th>
-                <th scope="col" className="px-5 py-3 font-semibold">
-                  {t("bexio, like for like")}
-                </th>
-                <th scope="col" className="text-primary px-5 py-3 font-bold">
-                  Batzio
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {years.map(([team, cheapest, like, ours]) => (
-                <tr key={team} className="border-b last:border-b-0">
-                  <th scope="row" className="px-5 py-3.5 font-medium">
-                    {team}
-                  </th>
-                  <td className="text-muted-foreground num px-5 py-3.5">{cheapest}</td>
-                  <td className="text-muted-foreground num px-5 py-3.5">{like}</td>
-                  <td className="num px-5 py-3.5 text-base font-bold">{ours}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {only.map((f) => (
+            <div key={f.title} className="bg-card lift rounded-2xl border p-6 shadow-xs">
+              <span className="bg-metal flex size-10 items-center justify-center rounded-xl text-white">
+                <f.icon className="size-5" />
+              </span>
+              <h3 className="font-display mt-4 text-lg font-semibold">{f.title}</h3>
+              <p className="text-muted-foreground mt-2 text-sm leading-6">{f.text}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -240,7 +223,25 @@ export default async function VsBexioPage() {
         <ComparisonTable groups={groups} them="bexio" us="Batzio" />
       </section>
 
-      <section aria-labelledby="switch" className="bg-hero scroll-mt-20 border-y py-20">
+      <section aria-labelledby="year" className="bg-muted/40 scroll-mt-20 border-y px-4 py-16 sm:px-6">
+        <div className="mx-auto max-w-5xl">
+          <SectionHeading
+            id="year"
+            icon={Wallet}
+            kicker={t("Pricing")}
+            title={t("And it costs less")}
+            text={t("bexio on the annual plan, excl. VAT. “Like for like” is the cheapest bexio package with what every Batzio plan includes, such as purchase orders, supplier bills and payroll.")}
+          />
+          <YearCosts />
+          <p className="mt-6 text-center text-sm">
+            <Link href="/pricing" className="text-primary inline-flex items-center gap-1 font-medium hover:underline">
+              {t("See full pricing")} <ArrowRight className="size-3.5" />
+            </Link>
+          </p>
+        </div>
+      </section>
+
+      <section aria-labelledby="switch" className="scroll-mt-20 py-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <SectionHeading
             id="switch"
@@ -256,32 +257,11 @@ export default async function VsBexioPage() {
                 <Truck /> {t("Start free and move in")}
               </Link>
             </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link href="/#pricing">
-                {t("See all prices")} <ArrowRight />
-              </Link>
-            </Button>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-6xl gap-4 px-4 py-14 sm:grid-cols-3 sm:px-6">
-        {[
-          { icon: Code, title: t("Open source"), text: t("Read every line, or run Batzio on your own server at no cost.") },
-          { icon: WifiOff, title: t("Offline apps"), text: t("The desktop and mobile apps, with your books kept on your own device.") },
-          { icon: HeartHandshake, title: t("Associations & non-profits"), text: t("Clubs, associations and non-profits use Batzio for free.") },
-        ].map((f) => (
-          <div key={f.title} className="bg-card rounded-2xl border p-6 shadow-xs">
-            <span className="bg-metal flex size-10 items-center justify-center rounded-xl text-white">
-              <f.icon className="size-5" />
-            </span>
-            <h3 className="font-display mt-4 text-lg font-semibold">{f.title}</h3>
-            <p className="text-muted-foreground mt-2 text-sm leading-6">{f.text}</p>
-          </div>
-        ))}
-      </section>
-
-      <section className="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
+      <section id="sources" className="mx-auto max-w-5xl scroll-mt-20 px-4 pb-16 sm:px-6">
         <div className="text-muted-foreground space-y-2 border-t pt-6 text-xs leading-5">
           <p>
             {t("About bexio, from bexio’s own pages, checked on {date}:", { date: CHECKED })}{" "}
@@ -294,7 +274,9 @@ export default async function VsBexioPage() {
               </span>
             ))}
           </p>
-          <p>{t("bexio prices are per month excl. VAT on the annual plan; the monthly plan costs CHF 10.– more. Where bexio’s pricing page and package comparison differ, we show the more generous one. Packages and prices can change, so check bexio’s site before deciding.")}</p>
+          <p>
+            <Figures text={t("bexio prices are per month excl. VAT on the annual plan; the monthly plan costs CHF 10.– more. Where bexio’s pricing page and package comparison differ, we show the more generous one. Packages and prices can change, so check bexio’s site before deciding.")} />
+          </p>
           <p>{t("bexio is a trademark of bexio AG. Batzio is not affiliated with bexio AG.")}</p>
         </div>
       </section>
