@@ -95,7 +95,7 @@ function apiIndex(origin: string) {
     documentation: `${origin}/docs/api`,
     openapi: `${origin}/api/v1/openapi.json`,
     mcp: `${origin}/api/mcp`,
-    authentication: "Authorization: Bearer <API key> (create keys under Settings → API & MCP)",
+    authentication: "REST: Authorization: Bearer <API key>, created under Settings → Connections. MCP: sign in with OAuth, or send the same API key.",
     resources: listResources().map((r) => ({ name: r.name, label: r.labelPlural, href: `${origin}/api/v1/${r.name}` })),
   };
 }

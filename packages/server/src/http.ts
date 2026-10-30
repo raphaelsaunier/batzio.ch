@@ -4,6 +4,7 @@ import { COMPAT_PREFIX, handleCompatRequest } from "./compat";
 import { handleEmailEvent, type InboundMessage } from "./email/inbound";
 import type { AppEnv } from "./env";
 import { handleMcp } from "./mcp/http";
+import { handleOauthHttp } from "./oauth";
 
 /**
  * Every Batzio endpoint under /api: REST (/api/v1), the compatibility API
@@ -12,6 +13,8 @@ import { handleMcp } from "./mcp/http";
  * app, so both behave identically.
  */
 export async function handleApiRequest(request: Request): Promise<Response | null> {
+  const oauth = await handleOauthHttp(request);
+  if (oauth) return oauth;
   const { pathname } = new URL(request.url);
   if (pathname === "/api/v1" || pathname.startsWith("/api/v1/")) {
     const segments = pathname.slice("/api/v1".length).split("/").filter(Boolean).map(decodeURIComponent);

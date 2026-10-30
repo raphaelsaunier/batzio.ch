@@ -196,7 +196,7 @@ export const ROWS: CatalogRow[] = [
   ["Team management is not available here.", "Die Teamverwaltung ist hier nicht verfügbar.", "La gestion de l’équipe n’est pas disponible ici.", "La gestione del team non è disponibile qui."],
   ["Team member", "Teammitglied", "Membre de l’équipe", "Membro del team"],
   ["Tell Batzi anything — or drop a file…", "Sag Batzi irgendetwas – oder zieh eine Datei rein…", "Dites n’importe quoi à Batzi – ou déposez un fichier…", "Di’ qualsiasi cosa a Batzi – o trascina un file…"],
-  ["Tell Batzio (⌘K)", "Batzio sagen (⌘K)", "Dire à Batzio (⌘K)", "Dillo a Batzio (⌘K)"],
+  ["Tell Batzio (⌘J)", "Batzio sagen (⌘J)", "Dire à Batzio (⌘J)", "Dillo a Batzio (⌘J)"],
   ["Tell Batzio…", "Batzio sagen…", "Dire à Batzio…", "Dillo a Batzio…"],
   ["Tell me what happened — “Anna paid”, “I bought a laptop”, “change the invoice footer” — or drop a bill, a receipt, a statement, a spreadsheet or a screenshot.", "Erzähl mir, was passiert ist – «Anna hat bezahlt», «Ich habe einen Laptop gekauft», «ändere den Rechnungs-Schlusstext» – oder zieh eine Rechnung, eine Quittung, einen Kontoauszug, eine Tabelle oder einen Screenshot rein.", "Racontez-moi ce qui s’est passé – « Anna a payé », « j’ai acheté un ordinateur », « change le texte de fin des factures » – ou déposez une facture, un reçu, un relevé, un tableau ou une capture d’écran.", "Raccontami cos’è successo – «Anna ha pagato», «ho comprato un portatile», «cambia il testo di chiusura delle fatture» – oppure trascina una fattura, una ricevuta, un estratto conto, una tabella o uno screenshot."],
   ["Text", "Text", "Texte", "Testo"],

@@ -130,6 +130,13 @@ export const LOCALIZED_TEXTS: Record<"de" | "fr" | "it" | "en", DocumentTexts> =
   },
 };
 
+/** First characters of the built-in text, for the settings form. Unknown languages fall back to German. */
+export function documentTextPreview(lang: string, key: string): string {
+  const language = (lang as keyof typeof LOCALIZED_TEXTS) in LOCALIZED_TEXTS ? (lang as keyof typeof LOCALIZED_TEXTS) : "de";
+  const text = LOCALIZED_TEXTS[language][key as keyof DocumentTexts];
+  return (text ?? "").slice(0, 70);
+}
+
 /** Effective document text: the company's override or the localized default. */
 export function documentText(texts: DocumentTexts, lang: string, key: keyof DocumentTexts): string | null {
   const own = texts[key];
@@ -156,7 +163,13 @@ export async function getSettings<K extends keyof SettingsMap>(ctx: Ctx, key: K)
       stored = {};
     }
   }
-  return { ...DEFAULTS[key], ...stored };
+  const merged = { ...DEFAULTS[key], ...stored };
+  if (key === "company") {
+    const company = merged as CompanySettings;
+    if (!(company.language in LOCALIZED_TEXTS)) company.language = "de";
+    if (typeof company.accent_color !== "string" || !/^#[0-9a-fA-F]{6}$/.test(company.accent_color)) company.accent_color = DEFAULT_COMPANY.accent_color;
+  }
+  return merged;
 }
 
 export async function saveSettings<K extends keyof SettingsMap>(ctx: Ctx, key: K, value: Partial<SettingsMap[K]>) {

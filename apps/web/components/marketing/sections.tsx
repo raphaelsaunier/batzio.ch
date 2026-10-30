@@ -85,8 +85,7 @@ export async function McpConfig() {
   "mcpServers": {
     "batzio": {
       "type": "http",
-      "url": "https://www.batzio.ch/api/mcp",
-      "headers": { "Authorization": "Bearer bz_…" }
+      "url": "https://www.batzio.ch/api/mcp"
     }
   }
 }`;
@@ -111,7 +110,7 @@ export async function CompatDiff() {
     ["-", "BASE_URL=https://api.your-current-software.ch"],
     ["+", "BASE_URL=https://www.batzio.ch/api/compat"],
     ["-", "TOKEN=<access token from your current software>"],
-    ["+", "TOKEN=bz_…   # Settings → API & MCP"],
+    ["+", "TOKEN=bz_…   # Settings → Connections"],
     [" ", ""],
     [" ", "GET  /2.0/contact?order_by=name_1"],
     [" ", "POST /2.0/kb_invoice/search"],

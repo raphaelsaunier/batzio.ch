@@ -112,15 +112,15 @@ export function CommandMenu({ tenant, sections }: { tenant: string; sections: Na
           {hits.length > 0 && <CommandSeparator />}
           <CommandGroup heading={t("Create")}>
             {QUICK_CREATE.map((c) => (
-              <CommandItem key={c.resource} value={c.label} onSelect={() => go(`/${tenant}/${c.resource}/new`)}>
-                <Plus /> {c.label}
+              <CommandItem key={c.resource} value={`${t(c.label)} ${c.resource}`} onSelect={() => go(`/${tenant}/${c.resource}/new`)}>
+                <Plus /> {t(c.label)}
               </CommandItem>
             ))}
           </CommandGroup>
           {sections.map((s) => (
             <CommandGroup key={s.id} heading={t(s.label)}>
               {s.items.map((item) => (
-                <CommandItem key={item.href} value={`${t(s.label)} ${t(item.title)}`} onSelect={() => go(item.href)}>
+                <CommandItem key={item.href} value={`${t(s.label)} ${t(item.title)} ${item.href}`} onSelect={() => go(item.href)}>
                   <Icon name={item.icon} /> {t(item.title)}
                 </CommandItem>
               ))}

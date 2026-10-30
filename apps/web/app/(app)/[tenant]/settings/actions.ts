@@ -9,6 +9,7 @@ import {
   removeCompanyMember,
   renewInboxAddress,
   revokeCompanyApiKey,
+  revokeOauthConnection,
   saveSequence,
   saveSettingsGroup,
   setCompanyLogo,
@@ -93,6 +94,16 @@ export async function createApiKeyAction(tenant: string, name: string, scope: "r
     const { key } = await issueApiKey(await tenantCtx(tenant), name, scope, role);
     revalidatePath(`/${tenant}/settings/api`);
     return { ok: true, message: (await getT())("API key created. Copy it now — it will not be shown again."), key };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function revokeOauthAction(tenant: string, id: string): Promise<ActionResponse> {
+  try {
+    await revokeOauthConnection(await tenantCtx(tenant), id);
+    revalidatePath(`/${tenant}/settings/api`);
+    return { ok: true, message: (await getT())("Disconnected.") };
   } catch (e) {
     return fail(e);
   }

@@ -80,6 +80,10 @@ export function AppSidebar({
   const base = `/${company.slug}`;
   const isActive = (item: NavItem) => {
     if (item.href === base) return pathname === base;
+    if (item.exact) {
+      if (pathname === item.href) return true;
+      return (item.match ?? []).some((p) => pathname === p || pathname.startsWith(`${p}/`));
+    }
     const prefixes = [item.href, ...(item.match ?? [])];
     return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   };
@@ -124,12 +128,12 @@ export function AppSidebar({
           <Button onClick={openQuickEntry} className="h-10 justify-start gap-2 rounded-xl bg-metal text-white shadow-soft hover:opacity-95">
             <Sparkles className="size-4" />
             <span className="flex-1 text-left">{t("Tell Batzio…")}</span>
-            <kbd className="rounded-md bg-white/20 px-1.5 py-0.5 text-[0.65rem] font-medium">⌘K</kbd>
+            <kbd className="rounded-md bg-white/20 px-1.5 py-0.5 text-[0.65rem] font-medium">⌘J</kbd>
           </Button>
         ) : (
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip={t("Tell Batzio (⌘K)")} onClick={openQuickEntry} className="bg-metal text-white hover:text-white">
+              <SidebarMenuButton tooltip={t("Tell Batzio (⌘J)")} onClick={openQuickEntry} className="bg-metal text-white hover:text-white">
                 <Sparkles />
               </SidebarMenuButton>
             </SidebarMenuItem>

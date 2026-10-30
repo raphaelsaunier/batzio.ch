@@ -1,5 +1,9 @@
 import { beforeAll, describe, expect, it } from "vitest";
+import { toBase64Url } from "../src/auth/crypto";
+import { openControlDb } from "../src/db/connections";
+import { getEnv } from "../src/env";
 import { handleApiRequest } from "../src/http";
+import { approveOauth } from "../src/oauth";
 import { MemoryBucket } from "./helpers/memory-bucket";
 import { SqliteD1 } from "./helpers/sqlite-d1";
 import { env } from "./helpers/workers-env";
@@ -148,5 +152,122 @@ describe("HTTP API", () => {
     const history = await call("GET", `/api/v1/app/audit/${entry.id}`, { token, tenant });
     expect(history.json.data.actor.automated).toBe(true);
     expect(history.json.data.provenance[0]).toMatchObject({ label: "MCP" });
+  });
+
+  it("lets an assistant connect over OAuth instead of a pasted key", async () => {
+    const anon = await handleApiRequest(
+      new Request(`${BASE}/api/mcp`, {
+        method: "POST",
+        headers: { "content-type": "application/json", accept: "application/json, text/event-stream" },
+        body: "{}",
+      }),
+    );
+    expect(anon!.status).toBe(401);
+    expect(anon!.headers.get("www-authenticate")).toContain("/.well-known/oauth-protected-resource/api/mcp");
+
+    const protectedResource = await call("GET", "/.well-known/oauth-protected-resource");
+    expect(protectedResource.json).toMatchObject({ resource: `${BASE}/api/mcp`, authorization_servers: [BASE] });
+    const server = await call("GET", "/.well-known/oauth-authorization-server");
+    expect(server.json.authorization_endpoint).toBe(`${BASE}/oauth/authorize`);
+    expect(server.json.code_challenge_methods_supported).toEqual(["S256"]);
+
+    const bad = await call("POST", "/oauth/register", { json: { client_name: "Nope", redirect_uris: ["http://evil.example/callback"] } });
+    expect(bad.status).toBe(400);
+
+    const redirect = "http://127.0.0.1:8787/callback";
+    const registered = await call("POST", "/oauth/register", {
+      json: { client_name: "Claude", redirect_uris: [redirect], token_endpoint_auth_method: "none" },
+    });
+    expect(registered.status).toBe(201);
+    const clientId = registered.json.client_id as string;
+    const again = await call("POST", "/oauth/register", { json: { client_name: "Claude", redirect_uris: [redirect] } });
+    expect(again.json.client_id).toBe(clientId);
+
+    const verifier = "a".repeat(64);
+    const challenge = toBase64Url(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier))));
+    const userId = (await call("GET", "/api/v1/auth/me", { token })).json.data.user.id as string;
+    const usedRedirect = "http://127.0.0.1:53211/callback";
+    const back = new URL(
+      await approveOauth(await openControlDb(getEnv()), {
+        userId,
+        origin: BASE,
+        clientId,
+        redirectUri: usedRedirect,
+        codeChallenge: challenge,
+        codeChallengeMethod: "S256",
+        state: "xyz",
+        resource: `${BASE}/api/mcp`,
+        tenantSlug: tenant,
+        scope: "write",
+        role: "admin",
+      }),
+    );
+    expect(back.origin + back.pathname).toBe("http://127.0.0.1:53211/callback");
+    expect(back.searchParams.get("state")).toBe("xyz");
+    const code = back.searchParams.get("code")!;
+
+    const wrong = await call("POST", "/oauth/token", {
+      json: { grant_type: "authorization_code", code, redirect_uri: usedRedirect, client_id: clientId, code_verifier: "b".repeat(64) },
+    });
+    expect(wrong.status).toBe(400);
+    const traded = await call("POST", "/oauth/token", {
+      json: { grant_type: "authorization_code", code, redirect_uri: usedRedirect, client_id: clientId, code_verifier: verifier, resource: `${BASE}/api/mcp` },
+    });
+    expect(traded.status, traded.text).toBe(200);
+    expect(traded.json.token_type).toBe("Bearer");
+    expect(traded.json.access_token).toMatch(/^bzo_/);
+    const reused = await call("POST", "/oauth/token", {
+      json: { grant_type: "authorization_code", code, redirect_uri: usedRedirect, client_id: clientId, code_verifier: verifier },
+    });
+    expect(reused.status).toBe(400);
+
+    const access = traded.json.access_token as string;
+    const mcp = (bearer: string, body: unknown) =>
+      handleApiRequest(
+        new Request(`${BASE}/api/mcp`, {
+          method: "POST",
+          headers: { authorization: `Bearer ${bearer}`, "content-type": "application/json", accept: "application/json, text/event-stream", "mcp-protocol-version": "2025-06-18" },
+          body: JSON.stringify(body),
+        }),
+      );
+    const created = await (await mcp(access, { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "create_record", arguments: { resource: "contacts", data: { type: "company", name_1: "OAuth AG" } } } }))!.json();
+    expect(created.result.isError ?? false, JSON.stringify(created)).toBe(false);
+
+    const refreshed = await call("POST", "/oauth/token", { json: { grant_type: "refresh_token", refresh_token: traded.json.refresh_token, client_id: clientId } });
+    expect(refreshed.status).toBe(200);
+    expect((await mcp(access, { jsonrpc: "2.0", id: 2, method: "tools/list", params: {} }))!.status).toBe(401);
+    const listed = await (await mcp(refreshed.json.access_token, { jsonrpc: "2.0", id: 3, method: "tools/list", params: {} }))!.json();
+    expect(listed.result.tools.length).toBeGreaterThan(20);
+
+    expect((await call("POST", "/oauth/revoke", { json: { token: refreshed.json.refresh_token } })).status).toBe(200);
+    expect((await mcp(refreshed.json.access_token, { jsonrpc: "2.0", id: 4, method: "tools/list", params: {} }))!.status).toBe(401);
+
+    const reader = await call("POST", "/oauth/register", { json: { client_name: "Reporter", redirect_uris: ["https://reporter.example/callback"] } });
+    const readBack = new URL(
+      await approveOauth(await openControlDb(getEnv()), {
+        userId,
+        origin: BASE,
+        clientId: reader.json.client_id,
+        redirectUri: "https://reporter.example/callback",
+        codeChallenge: challenge,
+        codeChallengeMethod: "S256",
+        state: null,
+        resource: null,
+        tenantSlug: tenant,
+        scope: "read",
+        role: "admin",
+      }),
+    );
+    const readToken = await call("POST", "/oauth/token", {
+      json: {
+        grant_type: "authorization_code",
+        code: readBack.searchParams.get("code"),
+        redirect_uri: "https://reporter.example/callback",
+        client_id: reader.json.client_id,
+        code_verifier: verifier,
+      },
+    });
+    const denied = await (await mcp(readToken.json.access_token, { jsonrpc: "2.0", id: 5, method: "tools/call", params: { name: "create_record", arguments: { resource: "contacts", data: { type: "company", name_1: "Nope" } } } }))!.json();
+    expect(denied.result.isError).toBe(true);
   });
 });

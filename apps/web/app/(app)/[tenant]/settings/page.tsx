@@ -4,6 +4,7 @@ import { Icon } from "@/components/icon";
 import { InboxCard } from "@/components/settings/inbox-card";
 import { SequenceRow, SettingsForm } from "@/components/settings/settings-form";
 import { PageBody, PageHeader } from "@/components/shell/page-header";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { masterDataLinks } from "@batzio/server/navigation";
 import { getT } from "@/lib/i18n/server";
@@ -13,7 +14,7 @@ import { ACCOUNTING_FIELDS, COMPANY_FIELDS, TEXT_LABELS } from "@batzio/server/a
 import { N_ } from "@batzio/i18n";
 import { canCtx } from "@batzio/server/ctx";
 import { DEFAULT_SEQUENCES, previewNumber, type SequenceRow as Seq } from "@batzio/server/numbering";
-import { getSettings, LOCALIZED_TEXTS } from "@batzio/server/settings";
+import { documentTextPreview, getSettings } from "@batzio/server/settings";
 import { tenantCtx } from "@/lib/server/session";
 import { ensureInboxToken, inboxAddress } from "@batzio/server/email/inbound";
 import { getEnv } from "@batzio/server/env";
@@ -32,14 +33,25 @@ export default async function SettingsPage({ params }: { params: Promise<{ tenan
   const [company, accounting, texts] = await Promise.all([getSettings(ctx, "company"), getSettings(ctx, "accounting"), getSettings(ctx, "texts")]);
   const sequences = await ctx.db.all<Seq>("SELECT * FROM sequences");
   const lang = company.language;
-  const textFields = (Object.keys(texts) as (keyof typeof texts)[]).map((k) =>
-    translateField(f.text(k, TEXT_LABELS[k as keyof typeof TEXT_LABELS] ?? k, { span: 3 }), t),
-  ).map((x) => ({ ...x, description: t("Default: “{text}…” (in each document’s language)", { text: LOCALIZED_TEXTS[lang][x.name as keyof typeof texts].slice(0, 70) }) }));
+  const textFields = (Object.keys(TEXT_LABELS) as (keyof typeof TEXT_LABELS)[]).map((k) =>
+    translateField(f.text(k, TEXT_LABELS[k], { span: 3 }), t),
+  ).map((x) => ({ ...x, description: t("Default: “{text}…” (in each document’s language)", { text: documentTextPreview(lang, x.name) }) }));
 
   return (
     <>
       <PageHeader title={t("Settings")} description={t("Or just tell Batzi: “change our address”, “invoices due in 20 days”, “number invoices RE-2026-001”.")} />
       <PageBody>
+        <Card className="shadow-xs">
+          <CardHeader>
+            <CardTitle>{t("Connections")}</CardTitle>
+            <CardDescription>{t("Claude, ChatGPT and your own tools, with the access you choose.")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link href={`/${tenant}/settings/api`}>{t("Manage connections")}</Link>
+            </Button>
+          </CardContent>
+        </Card>
         <Card className="shadow-xs">
           <CardHeader>
             <CardTitle>{t("Batzi & inbox")}</CardTitle>
@@ -68,7 +80,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ tenan
               tenant={tenant}
               group="accounting"
               fields={ACCOUNTING_FIELDS.map((x) => translateField(x, t))}
-              initial={{ ...accounting, chf_rounding: String(accounting.chf_rounding) } as unknown as Record<string, unknown>}
+              initial={{ ...accounting, chf_rounding: accounting.chf_rounding === 0.01 ? "0.01" : "0.05" } as unknown as Record<string, unknown>}
               disabled={!canWrite}
             />
           </CardContent>

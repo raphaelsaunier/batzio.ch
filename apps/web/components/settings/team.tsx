@@ -4,7 +4,7 @@ import { Check, Copy, KeyRound, Trash2, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { createApiKeyAction, inviteMemberAction, removeMemberAction, revokeApiKeyAction, setRoleAction } from "@/app/(app)/[tenant]/settings/actions";
+import { createApiKeyAction, inviteMemberAction, removeMemberAction, revokeApiKeyAction, revokeOauthAction, setRoleAction } from "@/app/(app)/[tenant]/settings/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -184,6 +184,29 @@ export function ApiKeyForm({ tenant, maxRole }: { tenant: string; maxRole: strin
         </Alert>
       )}
     </div>
+  );
+}
+
+export function DisconnectButton({ tenant, id }: { tenant: string; id: string }) {
+  const t = useT();
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      disabled={pending}
+      onClick={() =>
+        start(async () => {
+          const r = await revokeOauthAction(tenant, id);
+          if (r.ok) toast.success(r.message);
+          else toast.error(r.error);
+          router.refresh();
+        })
+      }
+    >
+      {pending ? <Spinner /> : <Trash2 />} {t("Disconnect")}
+    </Button>
   );
 }
 

@@ -1,4 +1,5 @@
 import { API_KEY_PREFIX, getMembership, getSessionUser, verifyApiKey, type UserRow } from "../control";
+import { OAUTH_ACCESS_PREFIX, verifyOauthAccessToken } from "../oauth";
 import type { Ctx, Source } from "../ctx";
 import { openControlDb, openTenantDb } from "../db/connections";
 import type { R2LikeBucket } from "../db/types";
@@ -57,6 +58,22 @@ export async function apiContext(request: Request, source: Source = "api"): Prom
   const files = env.FILES as R2LikeBucket | undefined;
 
   const token = bearer(request);
+  // OAuth access tokens (bzo_) also start with the API key prefix (bz_), so they are matched first.
+  if (token?.startsWith(OAUTH_ACCESS_PREFIX)) {
+    const verified = await verifyOauthAccessToken(control, token);
+    if (!verified) throw new AppError("unauthorized", "Invalid, expired or revoked access token.");
+    const db = await openTenantDb(env, verified.tenant);
+    return {
+      tenant: { id: verified.tenant.id, slug: verified.tenant.slug, name: verified.tenant.name, locale: verified.tenant.locale },
+      user: { id: verified.user.id, name: verified.user.name, email: verified.user.email },
+      role: verified.role,
+      scope: verified.scope,
+      actor: { type: "user", id: verified.user.id, name: `${verified.user.name} (${verified.clientName})`, source, ...meta },
+      db,
+      control,
+      files,
+    };
+  }
   if (token?.startsWith(API_KEY_PREFIX)) {
     const verified = await verifyApiKey(control, token);
     if (!verified) throw new AppError("unauthorized", "Invalid, expired or revoked API key.");

@@ -1,5 +1,6 @@
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { apiContext } from "../api/context";
+import { publicOrigin, wwwAuthenticate } from "../oauth";
 import { createMcpServer } from "./server";
 import { toAppError } from "../errors";
 
@@ -24,7 +25,7 @@ export async function handleMcpPost(request: Request): Promise<Response> {
     ctx = await apiContext(request, "mcp");
   } catch (error) {
     const e = toAppError(error);
-    return jsonRpcError(e.status, e.message, e.status === 401 ? { "WWW-Authenticate": 'Bearer realm="batzio"' } : {});
+    return jsonRpcError(e.status, e.message, e.status === 401 ? { "WWW-Authenticate": wwwAuthenticate(publicOrigin(request)) } : {});
   }
   const server = createMcpServer(ctx);
   const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });

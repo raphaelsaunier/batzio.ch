@@ -275,7 +275,7 @@ export function buildOpenApi(origin: string): Json {
       description: [
         "REST API for Batzio, the Swiss business and accounting platform. Every action available in the web app is available here.",
         "",
-        "**Authentication** — create an API key under *Settings → API & MCP* and send it as `Authorization: Bearer bz_…`. Keys are bound to one company and capped to the creator's role; read-only keys cannot write.",
+        "**Authentication** — create an API key under *Settings → Connections* and send it as `Authorization: Bearer bz_…`. Keys are bound to one company and capped to the creator's role; read-only keys cannot write.",
         "",
         "**Conventions** — amounts are decimal numbers in major units (e.g. `1250.50`), dates are `YYYY-MM-DD`. Lists support `q`, `sort`, `dir`, `limit`, `offset`, equality filters on fields (`status=open`) and ranges (`date_gte=2026-01-01`). Add `format=xlsx` to download any list as Excel.",
         "",
@@ -283,7 +283,7 @@ export function buildOpenApi(origin: string): Json {
         "",
         "**Workflows** — state changes (issue, record payment, book, cancel…) are `POST /{resource}/{id}/{action}` endpoints. Every change is written to the tamper-evident audit log.",
         "",
-        `**MCP** — AI assistants can connect to \`${origin}/api/mcp\` (Streamable HTTP) with the same API keys.`,
+        `**MCP** — AI assistants connect to \`${origin}/api/mcp\` (Streamable HTTP). Adding that address starts an OAuth sign-in; an API key works as a bearer token too.`,
       ].join("\n"),
     },
     servers: [{ url: `${origin}/api/v1` }],

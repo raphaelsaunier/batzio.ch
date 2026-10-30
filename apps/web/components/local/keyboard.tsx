@@ -79,7 +79,7 @@ export function KeyboardShortcuts({ tenant }: { tenant: string }) {
     let chord = false;
     let chordTimer: ReturnType<typeof setTimeout> | undefined;
     const onKey = (e: KeyboardEvent) => {
-      const typing = (e.target as HTMLElement).closest("input, textarea, select, [contenteditable=true], [role=dialog]");
+      const typing = e.target instanceof Element && e.target.closest("input, textarea, select, [contenteditable=true], [role=dialog]");
       if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
       if (chord) {
         chord = false;

@@ -98,4 +98,53 @@ ALTER TABLE tenants ADD COLUMN inbox_token TEXT;
 CREATE UNIQUE INDEX tenants_inbox_token ON tenants(inbox_token) WHERE inbox_token IS NOT NULL;
 `,
   },
+  {
+    id: 3,
+    name: "oauth",
+    sql: `
+CREATE TABLE oauth_clients (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  redirect_uris TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT ${NOW},
+  UNIQUE (name, redirect_uris)
+);
+
+CREATE TABLE oauth_grants (
+  id TEXT PRIMARY KEY,
+  client_id TEXT NOT NULL,
+  client_name TEXT NOT NULL,
+  tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  scope TEXT NOT NULL,
+  role TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT ${NOW},
+  last_used_at TEXT,
+  revoked_at TEXT
+);
+CREATE INDEX oauth_grants_tenant ON oauth_grants(tenant_id);
+
+CREATE TABLE oauth_codes (
+  id TEXT PRIMARY KEY,
+  client_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  tenant_id TEXT NOT NULL,
+  scope TEXT NOT NULL,
+  role TEXT NOT NULL,
+  redirect_uri TEXT NOT NULL,
+  code_challenge TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  used_at TEXT
+);
+
+CREATE TABLE oauth_tokens (
+  id TEXT PRIMARY KEY,
+  grant_id TEXT NOT NULL REFERENCES oauth_grants(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  revoked_at TEXT
+);
+CREATE INDEX oauth_tokens_grant ON oauth_tokens(grant_id);
+`,
+  },
 ];

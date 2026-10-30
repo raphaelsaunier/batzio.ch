@@ -2,6 +2,7 @@ import { isRole, type Role } from "@batzio/core/permissions";
 import { N_, type TFunction } from "@batzio/i18n";
 import { audit } from "./audit";
 import { createApiKey, inviteMember, removeMember, renameTenant, revokeApiKey, setMemberRole } from "./control";
+import { revokeOauthGrant } from "./oauth";
 import { assertCan, type Ctx } from "./ctx";
 import { inboxAddress, rotateInboxToken } from "./email/inbound";
 import { attachFile, readFile } from "./files";
@@ -11,7 +12,7 @@ import { renderNumber } from "./numbering";
 import { translateField } from "./resources/client";
 import { f, LANGUAGE_OPTIONS, opt } from "./resources/fields";
 import type { FieldDef, Row } from "./resources/types";
-import { getSettings, LOCALIZED_TEXTS, saveSettings, type DocumentTexts } from "./settings";
+import { documentTextPreview, getSettings, saveSettings, type DocumentTexts } from "./settings";
 
 /**
  * Company administration shared by the web settings screens and the native
@@ -68,9 +69,9 @@ export const ACCOUNTING_FIELDS: FieldDef[] = [
 export async function settingsForms(ctx: Ctx, t: TFunction) {
   const [company, accounting, texts] = await Promise.all([getSettings(ctx, "company"), getSettings(ctx, "accounting"), getSettings(ctx, "texts")]);
   const lang = company.language;
-  const textFields = (Object.keys(texts) as (keyof DocumentTexts)[])
-    .map((k) => translateField(f.text(k, TEXT_LABELS[k] ?? k, { span: 3 }), t))
-    .map((x) => ({ ...x, description: t("Default: “{text}…” (in each document’s language)", { text: LOCALIZED_TEXTS[lang][x.name as keyof DocumentTexts].slice(0, 70) }) }));
+  const textFields = (Object.keys(TEXT_LABELS) as (keyof DocumentTexts)[])
+    .map((k) => translateField(f.text(k, TEXT_LABELS[k], { span: 3 }), t))
+    .map((x) => ({ ...x, description: t("Default: “{text}…” (in each document’s language)", { text: documentTextPreview(lang, x.name) }) }));
   return {
     company: { fields: COMPANY_FIELDS.map((x) => translateField(x, t)), values: company as unknown as Row },
     accounting: { fields: ACCOUNTING_FIELDS.map((x) => translateField(x, t)), values: { ...accounting, chf_rounding: String(accounting.chf_rounding) } as unknown as Row },
@@ -163,6 +164,15 @@ export async function issueApiKey(ctx: Ctx, name: string, scope: "read" | "write
   });
   await audit(ctx, { action: "create_api_key", resource: "api_keys", resourceId: issued.record.id, summary: `API key “${issued.record.name}” (${scope}, ${issued.record.role}) created` });
   return issued;
+}
+
+export async function revokeOauthConnection(ctx: Ctx, id: string): Promise<void> {
+  assertCan(ctx, "settings", "read");
+  const owner = await ctx.control.value<string>("SELECT user_id FROM oauth_grants WHERE id = ? AND tenant_id = ? AND revoked_at IS NULL", id, ctx.tenant.id);
+  if (!owner) throw new AppError("not_found", "Connection not found.");
+  if (owner !== ctx.user?.id && ctx.role !== "owner" && ctx.role !== "admin") throw new AppError("forbidden", "You can only disconnect your own connections.");
+  await revokeOauthGrant(ctx.control, ctx.tenant.id, id);
+  await audit(ctx, { action: "revoke_oauth", resource: "oauth_grants", resourceId: id, summary: "Assistant disconnected" });
 }
 
 export async function revokeCompanyApiKey(ctx: Ctx, id: string): Promise<void> {

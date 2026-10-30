@@ -8,6 +8,8 @@ export interface NavItem {
   icon: string;
   /** Extra path prefixes that mark this item active. */
   match?: string[];
+  /** Match this item's own href exactly, so a shorter path does not swallow a more specific one. */
+  exact?: boolean;
 }
 
 export interface NavSection {
@@ -27,7 +29,7 @@ const EXTRA: { group: string; order: number; title: string; path: string; icon: 
 const SETTINGS_ITEMS: { title: string; path: string; icon: string; area: Area }[] = [
   { title: "Company", path: "/settings", icon: "Settings", area: "settings" },
   { title: "Users & roles", path: "/settings/users", icon: "Users", area: "users" },
-  { title: "API & MCP", path: "/settings/api", icon: "KeyRound", area: "settings" },
+  { title: "Connections", path: "/settings/api", icon: "KeyRound", area: "settings" },
   { title: "Move in", path: "/settings/import", icon: "Truck", area: "settings" },
   { title: "Audit log", path: "/audit_log", icon: "ShieldCheck", area: "audit" },
 ];
@@ -70,7 +72,8 @@ function simpleNavigation(slug: string, role: Role): NavSection[] {
       items: [
         family("products", "Products"),
         readable(role, "files") ? { title: "Files", href: `${base}/files`, icon: "Paperclip" } : null,
-        can(role, "settings", "read") ? { title: "Settings", href: `${base}/settings`, icon: "Settings", match: [`${base}/settings`, `${base}/audit_log`] } : null,
+        can(role, "settings", "read") ? { title: "Connections", href: `${base}/settings/api`, icon: "KeyRound" } : null,
+        can(role, "settings", "read") ? { title: "Settings", href: `${base}/settings`, icon: "Settings", exact: true, match: [`${base}/settings/users`, `${base}/settings/import`, `${base}/audit_log`] } : null,
       ].filter(Boolean) as NavItem[],
     },
   ];
