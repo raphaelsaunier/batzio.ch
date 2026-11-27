@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Cinzel, Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
-import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/toast";
 import { ThemeProvider } from "@/components/theme-provider";
 import { I18nProvider } from "@batzio/i18n/react";
 import { CATALOG_VERSION } from "@batzio/i18n/server";
@@ -28,9 +27,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang={locale} className={cn("font-sans", inter.variable, display.variable, brand.variable)} suppressHydrationWarning>
       <body>
         <I18nProvider locale={locale} version={CATALOG_VERSION} messages={navigation ? undefined : messagesFor(locale)}>
-          <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-            <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
-            <Toaster position="bottom-right" richColors closeButton />
+          <ThemeProvider>
+            {children}
+            <Toaster />
           </ThemeProvider>
         </I18nProvider>
       </body>

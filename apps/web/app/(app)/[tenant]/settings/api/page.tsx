@@ -38,10 +38,8 @@ export default async function ApiSettingsPage({ params }: { params: Promise<{ te
         description={t("Connect assistants by signing in, or create a key for a script.")}
         crumbs={[{ label: t("Settings"), href: `/${tenant}/settings` }, { label: t("Connections") }]}
         actions={
-          <Button variant="outline" asChild>
-            <Link href="/docs/api" target="_blank">
-              {t("API reference")}
-            </Link>
+          <Button variant="outline" render={<Link href="/docs/api" target="_blank" />}>
+            {t("API reference")}
           </Button>
         }
       />

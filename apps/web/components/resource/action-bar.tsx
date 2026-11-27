@@ -3,7 +3,7 @@
 import { FileDown, MoreHorizontal, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { toast } from "sonner";
+import { toast } from "@ui-sdk/react/toast";
 import { deleteRecordAction, runRecordAction } from "@/app/(app)/[tenant]/actions";
 import { Icon } from "@/components/icon";
 import {
@@ -121,10 +121,8 @@ export function ActionBar({
   return (
     <>
       {pdfHref && (
-        <Button variant="outline" asChild>
-          <a href={pdfHref} target="_blank" rel="noreferrer">
-            <FileDown /> PDF
-          </a>
+        <Button variant="outline" render={<a href={pdfHref} target="_blank" rel="noreferrer" />}>
+          <FileDown /> PDF
         </Button>
       )}
       {primary.map((a, i) => (
@@ -134,10 +132,8 @@ export function ActionBar({
       ))}
       {(secondary.length > 0 || canDelete) && (
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon" aria-label={t("More actions")}>
-              <MoreHorizontal />
-            </Button>
+          <DropdownMenuTrigger render={<Button variant="outline" size="icon" aria-label={t("More actions")} />}>
+            <MoreHorizontal />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             {secondary.map((a) => (

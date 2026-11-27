@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { createCompanyAction, demoLoginAction, loginAction, signupAction, type FormState } from "@/app/(auth)/actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,15 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { useT } from "@batzio/i18n/react";
+
+/** After an action rejects fields, focus the first one so its label and error are read out. */
+function useFocusFirstError(state: FormState) {
+  const form = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    if (state.fields && Object.keys(state.fields).length) form.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+  }, [state]);
+  return form;
+}
 
 const LANGUAGES = [
   { value: "de", label: "Deutsch" },
@@ -48,12 +57,12 @@ export function LoginForm({ next, invite }: { next?: string; invite?: string }) 
       <input type="hidden" name="invite" value={invite ?? ""} />
       <FieldGroup>
         <Field>
-          <FieldLabel htmlFor="email">{t("Email")}</FieldLabel>
-          <Input id="email" name="email" type="email" autoComplete="email" required defaultValue={state.values?.email} />
+          <FieldLabel>{t("Email")}</FieldLabel>
+          <Input name="email" type="email" autoComplete="email" required defaultValue={state.values?.email} />
         </Field>
         <Field>
-          <FieldLabel htmlFor="password">{t("Password")}</FieldLabel>
-          <Input id="password" name="password" type="password" autoComplete="current-password" required />
+          <FieldLabel>{t("Password")}</FieldLabel>
+          <Input name="password" type="password" autoComplete="current-password" required />
         </Field>
       </FieldGroup>
       <Button type="submit" className="w-full" size="lg" disabled={pending}>
@@ -98,24 +107,26 @@ function CompanyFields({ state }: { state: FormState }) {
   const [company, setCompany] = useState(state.values?.company ?? "");
   const [slug, setSlug] = useState(state.values?.slug ?? "");
   const [language, setLanguage] = useState(state.values?.language ?? "de");
+  // Controlled, so the form reset React runs after each action keeps the choice.
+  const [demo, setDemo] = useState(true);
   return (
     <>
-      <Field data-invalid={!!state.fields?.company}>
-        <FieldLabel htmlFor="company">{t("Company name")}</FieldLabel>
-        <Input id="company" name="company" required value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Muster GmbH" />
+      <Field invalid={state.fields?.company ? true : undefined}>
+        <FieldLabel>{t("Company name")}</FieldLabel>
+        <Input name="company" required value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Muster GmbH" />
         <FieldError>{state.fields?.company}</FieldError>
       </Field>
       <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
-        <Field data-invalid={!!state.fields?.slug}>
-          <FieldLabel htmlFor="slug">{t("Company address")}</FieldLabel>
-          <Input id="slug" name="slug" value={slug} onChange={(e) => setSlug(slugPreview(e.target.value))} placeholder={slugPreview(company) || "muster-gmbh"} />
+        <Field invalid={state.fields?.slug ? true : undefined}>
+          <FieldLabel>{t("Company address")}</FieldLabel>
+          <Input name="slug" value={slug} onChange={(e) => setSlug(slugPreview(e.target.value))} placeholder={slugPreview(company) || "muster-gmbh"} />
           <FieldDescription>batzio.ch/{slug || slugPreview(company) || "muster-gmbh"}</FieldDescription>
           <FieldError>{state.fields?.slug}</FieldError>
         </Field>
         <Field>
           <FieldLabel>{t("Language")}</FieldLabel>
           <input type="hidden" name="language" value={language} />
-          <Select value={language} onValueChange={setLanguage}>
+          <Select value={language} onValueChange={(v) => v && setLanguage(v)}>
             <SelectTrigger className="w-36">
               <SelectValue />
             </SelectTrigger>
@@ -131,8 +142,8 @@ function CompanyFields({ state }: { state: FormState }) {
         </Field>
       </div>
       <Field orientation="horizontal">
-        <Checkbox id="demo" name="demo" defaultChecked />
-        <FieldLabel htmlFor="demo" className="font-normal">
+        <Checkbox name="demo" checked={demo} onCheckedChange={(v) => setDemo(v === true)} />
+        <FieldLabel className="font-normal">
           {t("Fill with demo data (contacts, invoices, bookings, payroll)")}
         </FieldLabel>
       </Field>
@@ -143,22 +154,23 @@ function CompanyFields({ state }: { state: FormState }) {
 export function SignupForm({ invite }: { invite?: string }) {
   const t = useT();
   const [state, action, pending] = useActionState(signupAction, {});
+  const form = useFocusFirstError(state);
   return (
-    <form action={action} className="space-y-6">
+    <form ref={form} action={action} className="space-y-6">
       <ErrorBanner state={state} />
       <input type="hidden" name="invite" value={invite ?? ""} />
       <FieldGroup>
-        <Field data-invalid={!!state.fields?.name}>
-          <FieldLabel htmlFor="name">{t("Your name")}</FieldLabel>
-          <Input id="name" name="name" autoComplete="name" required defaultValue={state.values?.name} />
+        <Field invalid={state.fields?.name ? true : undefined}>
+          <FieldLabel>{t("Your name")}</FieldLabel>
+          <Input name="name" autoComplete="name" required defaultValue={state.values?.name} />
         </Field>
         <Field>
-          <FieldLabel htmlFor="email">{t("Work email")}</FieldLabel>
-          <Input id="email" name="email" type="email" autoComplete="email" required defaultValue={state.values?.email} />
+          <FieldLabel>{t("Work email")}</FieldLabel>
+          <Input name="email" type="email" autoComplete="email" required defaultValue={state.values?.email} />
         </Field>
         <Field>
-          <FieldLabel htmlFor="password">{t("Password")}</FieldLabel>
-          <Input id="password" name="password" type="password" autoComplete="new-password" minLength={10} required />
+          <FieldLabel>{t("Password")}</FieldLabel>
+          <Input name="password" type="password" autoComplete="new-password" minLength={10} required />
           <FieldDescription>{t("At least 10 characters.")}</FieldDescription>
         </Field>
         {!invite && <CompanyFields state={state} />}
@@ -179,8 +191,9 @@ export function SignupForm({ invite }: { invite?: string }) {
 export function CreateCompanyForm() {
   const t = useT();
   const [state, action, pending] = useActionState(createCompanyAction, {});
+  const form = useFocusFirstError(state);
   return (
-    <form action={action} className="space-y-6">
+    <form ref={form} action={action} className="space-y-6">
       <ErrorBanner state={state} />
       <FieldGroup>
         <CompanyFields state={state} />

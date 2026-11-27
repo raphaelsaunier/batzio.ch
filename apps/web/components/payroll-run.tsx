@@ -3,7 +3,7 @@
 import { Play } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { toast } from "sonner";
+import { toast } from "@ui-sdk/react/toast";
 import { runPayrollAction } from "@/app/(app)/[tenant]/ops-actions";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -35,7 +35,7 @@ export function PayrollRunForm({ tenant, year, month }: { tenant: string; year: 
     >
       <Field className="w-auto">
         <FieldLabel>{t("Month")}</FieldLabel>
-        <Select value={m} onValueChange={setM}>
+        <Select value={m} onValueChange={(v) => v && setM(v)}>
           <SelectTrigger className="w-40">
             <SelectValue />
           </SelectTrigger>
@@ -50,7 +50,7 @@ export function PayrollRunForm({ tenant, year, month }: { tenant: string; year: 
       </Field>
       <Field className="w-auto">
         <FieldLabel>{t("Year")}</FieldLabel>
-        <Select value={y} onValueChange={setY}>
+        <Select value={y} onValueChange={(v) => v && setY(v)}>
           <SelectTrigger className="w-28">
             <SelectValue />
           </SelectTrigger>

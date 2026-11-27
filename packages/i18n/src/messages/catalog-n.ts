@@ -117,4 +117,9 @@ export const ROWS: CatalogRow[] = [
   ],
   ["Open source & integrations", "Open Source & Integrationen", "Open source et intégrations", "Open source e integrazioni"],
   ["And it costs less", "Und es kostet weniger", "Et ça coûte moins cher", "E costa meno"],
+  // Screen-reader announcements from ui-sdk components (command results, toasts).
+  ["Loading…", "Wird geladen…", "Chargement…", "Caricamento…"],
+  ["1 result", "1 Ergebnis", "1 résultat", "1 risultato"],
+  ["{n} results", "{n} Ergebnisse", "{n} résultats", "{n} risultati"],
+  ["Notifications", "Mitteilungen", "Notifications", "Notifiche"],
 ];

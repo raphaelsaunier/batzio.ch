@@ -4,7 +4,7 @@ import { Bot, ShieldCheck, Undo2, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { toast } from "sonner";
+import { toast } from "@ui-sdk/react/toast";
 import { runRecordAction } from "@/app/(app)/[tenant]/actions";
 import {
   AlertDialog,
@@ -88,15 +88,17 @@ function Entry({ tenant, entry, last }: { tenant: string; entry: HistoryEntry; l
     <li className="relative flex gap-3 pb-5">
       {!last && <span className="bg-border absolute top-8 bottom-0 left-[0.9375rem] w-px" aria-hidden />}
       <Tooltip>
-        <TooltipTrigger asChild>
-          <span
-            className={cn(
-              "relative flex size-8 shrink-0 items-center justify-center rounded-full border",
-              entry.actor.automated ? "bg-primary/10 text-primary border-primary/20" : "bg-card text-muted-foreground",
-            )}
-          >
-            <Who className="size-4" aria-label={entry.actor.automated ? t("Software") : t("Person")} />
-          </span>
+        <TooltipTrigger
+          render={
+            <span
+              className={cn(
+                "relative flex size-8 shrink-0 items-center justify-center rounded-full border",
+                entry.actor.automated ? "bg-primary/10 text-primary border-primary/20" : "bg-card text-muted-foreground",
+              )}
+            />
+          }
+        >
+          <Who className="size-4" aria-label={entry.actor.automated ? t("Software") : t("Person")} />
         </TooltipTrigger>
         <TooltipContent>{entry.actor.automated ? t("Software") : t("Person")}</TooltipContent>
       </Tooltip>
@@ -128,9 +130,7 @@ function Entry({ tenant, entry, last }: { tenant: string; entry: HistoryEntry; l
           {entry.ip && <span className="num">· {entry.ip}</span>}
           {entry.sealed && (
             <Tooltip>
-              <TooltipTrigger asChild>
-                <ShieldCheck className="text-success size-3.5" aria-label={t("Sealed in the tamper-proof chain")} />
-              </TooltipTrigger>
+              <TooltipTrigger render={<ShieldCheck className="text-success size-3.5" aria-label={t("Sealed in the tamper-proof chain")} />} />
               <TooltipContent>{t("Sealed in the tamper-proof chain")}</TooltipContent>
             </Tooltip>
           )}
@@ -141,7 +141,12 @@ function Entry({ tenant, entry, last }: { tenant: string; entry: HistoryEntry; l
             {t("Show all {n} changes", { n: entry.changes.length })}
           </button>
         )}
-        {entry.undo.possible && <UndoButton tenant={tenant} entry={entry} />}
+        {/* Its dialog renders in place; the div keeps this column's space-y margins off the backdrop. */}
+        {entry.undo.possible && (
+          <div>
+            <UndoButton tenant={tenant} entry={entry} />
+          </div>
+        )}
       </div>
     </li>
   );

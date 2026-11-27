@@ -288,7 +288,7 @@ export function LocalResourceList(props: LocalListProps) {
         </InputGroup>
         {filterFields.map((f) => (
           <Select key={f.name} value={filters[f.name] ?? ALL} onValueChange={(v) => setFilter(f.name, v === ALL ? null : v)}>
-            <SelectTrigger size="sm" className="h-8 min-w-32">
+            <SelectTrigger size="sm" aria-label={f.label} className="h-8 min-w-32">
               <Filter className="size-3.5 opacity-60" />
               <SelectValue placeholder={f.label} />
             </SelectTrigger>
@@ -311,14 +311,12 @@ export function LocalResourceList(props: LocalListProps) {
         ))}
         <div className="ml-auto flex items-center gap-2">
           {softDelete && (
-            <Button variant="ghost" size="sm" asChild>
-              <Link href={`${base}?archived=include`}>{t("Show archived")}</Link>
+            <Button variant="ghost" size="sm" render={<Link href={`${base}?archived=include`} />}>
+              {t("Show archived")}
             </Button>
           )}
-          <Button variant="outline" size="sm" asChild>
-            <a href={`/api/v1/${resource}?format=xlsx&tenant=${tenant}`}>
-              <Download /> {t("Export to Excel")}
-            </a>
+          <Button variant="outline" size="sm" render={<a href={`/api/v1/${resource}?format=xlsx&tenant=${tenant}`} />}>
+            <Download /> {t("Export to Excel")}
           </Button>
         </div>
       </div>
@@ -378,10 +376,8 @@ export function LocalResourceList(props: LocalListProps) {
                         {empty?.text && <p className="mx-auto max-w-sm text-sm">{empty.text}</p>}
                       </div>
                       {canCreate && (
-                        <Button variant="outline" size="sm" asChild>
-                          <Link href={`${base}/new`}>
-                            <Plus /> {t("Create the first one")}
-                          </Link>
+                        <Button variant="outline" size="sm" render={<Link href={`${base}/new`} />}>
+                          <Plus /> {t("Create the first one")}
                         </Button>
                       )}
                     </div>

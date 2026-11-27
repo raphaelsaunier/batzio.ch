@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -37,6 +37,9 @@ export function PeriodPicker({ mode = "range", from, to }: { mode?: "range" | "d
   const [end, setEnd] = useState(to ?? "");
   const all = presets(t);
   const current = all.find((p) => p.from === from && p.to === to)?.id ?? "custom";
+  // The Select shows the pick at once; the URL (and so `current`) only follows after router.replace.
+  const [preset, setPreset] = useState(current);
+  useEffect(() => setPreset(current), [current]);
 
   const apply = (f: string, t: string) => {
     const next = new URLSearchParams(params.toString());
@@ -69,17 +72,18 @@ export function PeriodPicker({ mode = "range", from, to }: { mode?: "range" | "d
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Select
-        value={current}
+        value={preset}
         onValueChange={(id) => {
           const p = all.find((x) => x.id === id);
           if (p) {
+            setPreset(p.id);
             setStart(p.from);
             setEnd(p.to);
             apply(p.from, p.to);
           }
         }}
       >
-        <SelectTrigger className="h-8 w-40">
+        <SelectTrigger className="h-8 w-40" aria-label={t("Period")}>
           <SelectValue placeholder={t("Custom period")} />
         </SelectTrigger>
         <SelectContent>

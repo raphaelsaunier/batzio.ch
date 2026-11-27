@@ -37,8 +37,8 @@ export default async function AuthorizePage({ searchParams }: { searchParams: Pr
     return (
       <Shell>
         <h1 className="font-display text-2xl font-semibold tracking-tight">{t("This connection request is not valid.")}</h1>
-        <Button variant="outline" asChild className="mt-6">
-          <Link href="/">{t("Back")}</Link>
+        <Button variant="outline" className="mt-6" render={<Link href="/" />}>
+          {t("Back")}
         </Button>
       </Shell>
     );
@@ -55,9 +55,7 @@ export default async function AuthorizePage({ searchParams }: { searchParams: Pr
       {companies.length === 0 ? (
         <div className="space-y-4">
           <h1 className="font-display text-2xl font-semibold tracking-tight">{t("You don't have a company yet.")}</h1>
-          <Button asChild>
-            <Link href="/select">{t("Create one")}</Link>
-          </Button>
+          <Button render={<Link href="/select" />}>{t("Create one")}</Button>
         </div>
       ) : (
         <ConsentForm request={checked.request} companies={companies} email={user.email} />

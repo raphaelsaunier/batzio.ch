@@ -77,7 +77,7 @@ export function FieldInput({
       );
     case "enum":
       return (
-        <Select value={str || NONE} onValueChange={(v) => onChange(v === NONE ? null : v)} disabled={disabled}>
+        <Select value={str || (field.required ? null : NONE)} onValueChange={(v) => onChange(v === NONE ? null : v)} disabled={disabled}>
           <SelectTrigger id={id} className={cn("w-full", size)} aria-invalid={invalid} size={compact ? "sm" : "default"}>
             <SelectValue placeholder={t("Select…")} />
           </SelectTrigger>

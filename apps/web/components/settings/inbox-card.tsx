@@ -2,7 +2,7 @@
 
 import { Check, Copy, RefreshCw } from "lucide-react";
 import { useState, useTransition } from "react";
-import { toast } from "sonner";
+import { toast } from "@ui-sdk/react/toast";
 import { rotateInboxAction } from "@/app/(app)/[tenant]/settings/actions";
 import { Batzi } from "@/components/fun/batzi";
 import { Button } from "@/components/ui/button";

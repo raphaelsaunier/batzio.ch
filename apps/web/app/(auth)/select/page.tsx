@@ -27,7 +27,7 @@ export default async function SelectCompanyPage() {
           <p className="text-sm text-muted-foreground">Signed in as {user.email}</p>
         </div>
         <form action={logoutAction}>
-          <Button variant="ghost" size="sm">
+          <Button type="submit" variant="ghost" size="sm">
             <LogOut /> Sign out
           </Button>
         </form>

@@ -2,8 +2,8 @@
 
 import { Lock, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
-import { toast } from "sonner";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { toast } from "@ui-sdk/react/toast";
 import { saveRecordAction } from "@/app/(app)/[tenant]/actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -86,6 +86,14 @@ export function RecordForm({ tenant, resource, recordId, initial, labels: initia
   const [children, setChildren] = useState<Record<string, ChildRow[]>>(initialChildren);
   const [labels, setLabels] = useState<FormLabels>(initialLabels);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // After a failed save, focus the first rejected field so its label and error are read out.
+  const form = useRef<HTMLFormElement>(null);
+  const focusError = useRef(false);
+  useEffect(() => {
+    if (!focusError.current) return;
+    focusError.current = false;
+    form.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+  }, [errors]);
   const [dirty, setDirty] = useState(false);
   const [pending, start] = useTransition();
   const disabled = !canWrite || !!lockReason || resource.readOnly;
@@ -113,6 +121,7 @@ export function RecordForm({ tenant, resource, recordId, initial, labels: initia
     start(async () => {
       const r = await saveRecordAction(tenant, resource.name, recordId ?? null, payload);
       if (!r.ok) {
+        focusError.current = true;
         setErrors(r.fields ?? {});
         toast.error(r.error ?? t("Could not save."));
         return;
@@ -178,7 +187,7 @@ export function RecordForm({ tenant, resource, recordId, initial, labels: initia
   };
 
   return (
-    <form onSubmit={submit} className="space-y-5">
+    <form ref={form} onSubmit={submit} className="space-y-5">
       {lockReason && (
         <Alert>
           <Lock />
@@ -197,7 +206,7 @@ export function RecordForm({ tenant, resource, recordId, initial, labels: initia
               {section.fields.map((f) => {
                 const id = `f-${f.name}`;
                 return (
-                  <Field key={f.name} data-invalid={!!errors[f.name]} className={cn("col-span-1", SPAN[f.span ?? 3] ?? "sm:col-span-3")}>
+                  <Field key={f.name} invalid={errors[f.name] ? true : undefined} className={cn("col-span-1", SPAN[f.span ?? 3] ?? "sm:col-span-3")}>
                     <FieldLabel htmlFor={id} className="text-xs font-medium text-muted-foreground">
                       {f.label}
                       {f.required && <span className="text-destructive">*</span>}

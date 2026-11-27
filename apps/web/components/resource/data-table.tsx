@@ -9,6 +9,18 @@ import type { FieldDef, Row } from "@batzio/server/resources/types";
 import { cn } from "@/lib/utils";
 import { CellValue, isNumericField } from "./cell";
 
+/**
+ * A glossary hint in a column header. Its explanation renders in place (outside the sort link, so
+ * pressing it doesn't sort), and the wrapper resets the header's uppercase, nowrap and alignment.
+ */
+function HeaderHint({ term }: { term: string }) {
+  return (
+    <span className="inline-flex text-left font-normal tracking-normal whitespace-normal normal-case">
+      <TermHint id={term} />
+    </span>
+  );
+}
+
 export async function DataTable({
   columns,
   rows,
@@ -50,19 +62,21 @@ export async function DataTable({
               return (
                 <TableHead key={c.name} className={cn("h-10 text-xs font-semibold tracking-wide text-muted-foreground uppercase", numeric && "text-right")}>
                   {sortable ? (
-                    <Link href={sortHref!(c.name)} className={cn("inline-flex items-center gap-1 hover:text-foreground", numeric && "flex-row-reverse")}>
-                      {c.label}
-                      {c.term && <TermHint id={c.term} className="normal-case" />}
-                      {active ? (
-                        dir === "asc" ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />
-                      ) : (
-                        <ArrowUpDown className="size-3 opacity-30" />
-                      )}
-                    </Link>
+                    <span className={cn("inline-flex items-center gap-1", numeric && "flex-row-reverse")}>
+                      <Link href={sortHref!(c.name)} className={cn("inline-flex items-center gap-1 hover:text-foreground", numeric && "flex-row-reverse")}>
+                        {c.label}
+                        {active ? (
+                          dir === "asc" ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />
+                        ) : (
+                          <ArrowUpDown className="size-3 opacity-30" />
+                        )}
+                      </Link>
+                      {c.term && <HeaderHint term={c.term} />}
+                    </span>
                   ) : (
                     <span className="inline-flex items-center gap-1">
                       {c.label}
-                      {c.term && <TermHint id={c.term} className="normal-case" />}
+                      {c.term && <HeaderHint term={c.term} />}
                     </span>
                   )}
                 </TableHead>

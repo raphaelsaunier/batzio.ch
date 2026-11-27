@@ -82,13 +82,29 @@ export function CommandMenu({ tenant, sections }: { tenant: string; sections: Na
         <span className="flex-1 text-left text-sm">{t("Search or jump to…")}</span>
         <Kbd className="hidden sm:inline-flex">⌘K</Kbd>
       </Button>
-      <CommandDialog open={open} onOpenChange={setOpen} title={t("Search")} description={t("Search records and navigate")}>
-        <CommandInput placeholder={t("Search contacts, invoices, accounts…")} value={query} onValueChange={setQuery} />
+      <CommandDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={t("Search")}
+        description={t("Search records and navigate")}
+        query={query}
+        onQueryChange={(q, details) => {
+          // One Escape closes the palette and keeps the search, as before, instead of first clearing it.
+          if (details.reason === "escape-key") {
+            details.cancel();
+            setOpen(false);
+            return;
+          }
+          setQuery(q);
+        }}
+      >
+        <CommandInput aria-label={t("Search")} placeholder={t("Search contacts, invoices, accounts…")} />
+        <CommandEmpty>{t("No results.")}</CommandEmpty>
         <CommandList>
           {query.trim().length > 2 && (
             <CommandGroup heading="Batzi">
               <CommandItem
-                value={`batzi ${query}`}
+                value="ask-batzi"
                 onSelect={() => {
                   setOpen(false);
                   window.dispatchEvent(new CustomEvent("batzio:ask", { detail: query }));
@@ -99,11 +115,10 @@ export function CommandMenu({ tenant, sections }: { tenant: string; sections: Na
               </CommandItem>
             </CommandGroup>
           )}
-          <CommandEmpty>{t("No results.")}</CommandEmpty>
           {Object.entries(grouped).map(([label, list]) => (
             <CommandGroup key={label} heading={t(label)}>
               {list.map((h) => (
-                <CommandItem key={`${h.resource}-${h.id}`} value={`${label} ${h.label} ${h.id}`} onSelect={() => go(h.href)}>
+                <CommandItem key={`${h.resource}-${h.id}`} value={`${h.resource}-${h.id}`} keywords={[label, String(h.id)]} onSelect={() => go(h.href)}>
                   {h.label}
                 </CommandItem>
               ))}
@@ -112,15 +127,15 @@ export function CommandMenu({ tenant, sections }: { tenant: string; sections: Na
           {hits.length > 0 && <CommandSeparator />}
           <CommandGroup heading={t("Create")}>
             {QUICK_CREATE.map((c) => (
-              <CommandItem key={c.resource} value={`${t(c.label)} ${c.resource}`} onSelect={() => go(`/${tenant}/${c.resource}/new`)}>
+              <CommandItem key={c.resource} value={`create:${c.resource}`} keywords={[c.resource]} onSelect={() => go(`/${tenant}/${c.resource}/new`)}>
                 <Plus /> {t(c.label)}
               </CommandItem>
             ))}
           </CommandGroup>
           {sections.map((s) => (
-            <CommandGroup key={s.id} heading={t(s.label)}>
+            <CommandGroup key={s.id} heading={s.label ? t(s.label) : undefined}>
               {s.items.map((item) => (
-                <CommandItem key={item.href} value={`${t(s.label)} ${t(item.title)} ${item.href}`} onSelect={() => go(item.href)}>
+                <CommandItem key={item.href} value={`${s.id}:${item.href}`} keywords={[t(s.label), item.href]} onSelect={() => go(item.href)}>
                   <Icon name={item.icon} /> {t(item.title)}
                 </CommandItem>
               ))}

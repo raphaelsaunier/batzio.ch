@@ -3,7 +3,7 @@
 import { ArrowDown, ArrowUp, Calculator, Check, FileDown, Minus, Package, Pencil, Percent, Plus, QrCode, Save, SeparatorHorizontal, Trash2, Type, Undo2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from "react";
-import { toast } from "sonner";
+import { toast } from "@ui-sdk/react/toast";
 import { contactSnapshotAction, itemDefaultsAction, saveRecordAction, type ContactSnapshot } from "@/app/(app)/[tenant]/actions";
 import { moveRow, newKey, type ChildRow } from "@/components/resource/children-editor";
 import { FieldInput, type FormLabels, type FormValues } from "@/components/resource/field-input";
@@ -25,7 +25,7 @@ import type { QrBillData } from "@batzio/core/swiss/qr-bill";
 import { createScorReference } from "@batzio/core/swiss/references";
 import { cn } from "@/lib/utils";
 import { QrSlip } from "./qr-slip";
-import { BANK_FIELDS, FOOTER_FIELDS, LETTERHEAD_FIELDS, LogoField, SaveForAll, SettingsFields, useCompanyParts } from "./sheet-settings";
+import { BANK_FIELDS, FOOTER_FIELDS, LETTERHEAD_FIELDS, LogoField, SaveForAll, SettingsFields, ignorePopupClicks, useCompanyParts } from "./sheet-settings";
 
 /**
  * The document editor *is* the printout: an A4 sheet laid out with the same
@@ -205,13 +205,14 @@ function Zone({
   if (!panel) return body;
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>{body}</PopoverTrigger>
+      <PopoverTrigger render={body} />
+      {/* Renders in place, inside the sheet: font-sans undoes the sheet's printed typeface. */}
       <PopoverContent
         side={side}
         align="start"
         sideOffset={14}
         collisionPadding={12}
-        className={cn("neu-panel max-h-(--radix-popover-content-available-height) w-[22rem] space-y-3 overflow-y-auto p-4", panelClassName)}
+        className={cn("neu-panel max-h-(--available-height) w-[22rem] space-y-3 overflow-y-auto p-4 font-sans", panelClassName)}
       >
         <p className="font-display text-sm font-semibold">{label}</p>
         {panel}
@@ -223,7 +224,7 @@ function Zone({
 function PanelField({ field, value, onChange, tenant, labels, onLabels, error }: { field?: FieldDef; value: unknown; onChange: (v: unknown) => void; tenant: string; labels: FormLabels; onLabels: (k: string, l: Record<string, string>) => void; error?: string }) {
   if (!field) return null;
   return (
-    <label className="block space-y-1">
+    <label className="flex flex-col gap-1" onClick={ignorePopupClicks}>
       <span className="text-muted-foreground text-xs font-medium">{field.label}</span>
       <FieldInput id={`sheet-${field.name}`} field={field} value={value} onChange={onChange} tenant={tenant} labels={labels} onLabels={onLabels} invalid={!!error} />
       {error && <span className="text-destructive text-xs">{error}</span>}
@@ -634,7 +635,8 @@ export function DocumentSheet({
                 </div>
               ))}
 
-              <article className="sheet relative" style={{ width: `${PAGE.width}mm`, minHeight: `${PAGE.height}mm`, color: "rgb(31,38,51)", ["--accent" as string]: accent }}>
+              {/* Not --accent: the edit panels open in place inside the sheet and use the theme's --accent. */}
+              <article className="sheet relative" style={{ width: `${PAGE.width}mm`, minHeight: `${PAGE.height}mm`, color: "rgb(31,38,51)", ["--sheet-accent" as string]: accent }}>
                 {/* Letterhead */}
                 <div className="absolute inset-x-0 top-0" style={{ height: "4pt", background: accent }} />
                 <Zone
@@ -672,7 +674,7 @@ export function DocumentSheet({
                   style={{ left: "118mm", top: "45mm", width: "80mm", minHeight: "32mm" }}
                   panel={
                     <div className="space-y-3">
-                      <label className="block space-y-1">
+                      <label className="flex flex-col gap-1" onClick={ignorePopupClicks}>
                         <span className="text-muted-foreground text-xs font-medium">{field("contact_id")?.label}</span>
                         <RefSelect
                           tenant={tenant}
@@ -820,10 +822,8 @@ export function DocumentSheet({
                             </button>
                             {type === "item" || !row.text ? (
                               <Popover>
-                                <PopoverTrigger asChild>
-                                  <button type="button" className="neu-chip" title={t("Product")} aria-label={t("Product")}>
-                                    <Package />
-                                  </button>
+                                <PopoverTrigger className="neu-chip" title={t("Product")} aria-label={t("Product")}>
+                                  <Package />
                                 </PopoverTrigger>
                                 <PopoverContent className="neu-panel w-72 p-3" side="right">
                                   <RefSelect tenant={tenant} resource="items" value={row.item_id ? Number(row.item_id) : null} label={labels[`positions.${row._key}.item_id`]?.[toStr(row.item_id)] ?? null} onChange={(id, label) => pickItem(i, id, label)} />

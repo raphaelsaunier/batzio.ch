@@ -3,7 +3,7 @@
 import { FileDown, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { toast } from "sonner";
+import { toast } from "@ui-sdk/react/toast";
 import { importStatementAction } from "@/app/(app)/[tenant]/ops-actions";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
@@ -23,14 +23,14 @@ interface Bank {
 export function StatementImportForm({ tenant, banks }: { tenant: string; banks: Bank[] }) {
   const t = useT();
   const router = useRouter();
-  const [bank, setBank] = useState(banks[0] ? String(banks[0].id) : "");
+  const [bank, setBank] = useState<string | null>(banks[0] ? String(banks[0].id) : null);
   const [pending, start] = useTransition();
   return (
     <form
       className="space-y-4"
       action={(form) =>
         start(async () => {
-          form.set("bank_account_id", bank);
+          form.set("bank_account_id", bank ?? "");
           const r = await importStatementAction(tenant, form);
           if (!r.ok) return void toast.error(r.error);
           toast.success(r.message);
@@ -39,8 +39,8 @@ export function StatementImportForm({ tenant, banks }: { tenant: string; banks: 
       }
     >
       <Field>
-        <FieldLabel htmlFor="file">{t("Statement file")}</FieldLabel>
-        <Input id="file" name="file" type="file" accept=".xml,.camt,.csv,.txt" required />
+        <FieldLabel>{t("Statement file")}</FieldLabel>
+        <Input name="file" type="file" accept=".xml,.camt,.csv,.txt" required />
         <FieldDescription>{t("ISO 20022 camt.053 / camt.054 (XML) from any Swiss bank, or CSV with date;amount;text;reference.")}</FieldDescription>
       </Field>
       <Field>
@@ -60,8 +60,8 @@ export function StatementImportForm({ tenant, banks }: { tenant: string; banks: 
         </Select>
       </Field>
       <Field orientation="horizontal">
-        <Switch id="auto_book" name="auto_book" defaultChecked />
-        <FieldLabel htmlFor="auto_book" className="font-normal">
+        <Switch name="auto_book" defaultChecked />
+        <FieldLabel className="font-normal">
           {t("Book payments with an exact QR reference automatically")}
         </FieldLabel>
       </Field>
@@ -76,7 +76,7 @@ export function PaymentExportForm({ tenant, banks }: { tenant: string; banks: Ba
   const t = useT();
   const router = useRouter();
   const withPayments = banks.filter((b) => b.open > 0);
-  const [bank, setBank] = useState(withPayments[0] ? String(withPayments[0].id) : banks[0] ? String(banks[0].id) : "");
+  const [bank, setBank] = useState<string | null>(withPayments[0] ? String(withPayments[0].id) : banks[0] ? String(banks[0].id) : null);
   const [pending, start] = useTransition();
   return (
     <div className="space-y-4">

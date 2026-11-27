@@ -72,6 +72,7 @@ export function ConsentForm({ request, companies, email }: { request: ConsentReq
             <Select
               value={tenant}
               onValueChange={(slug) => {
+                if (!slug) return;
                 setTenant(slug);
                 const next = companies.find((c) => c.slug === slug);
                 if (next) setRole(next.role);
@@ -96,7 +97,7 @@ export function ConsentForm({ request, companies, email }: { request: ConsentReq
         )}
         <Field>
           <FieldLabel>{t("Access")}</FieldLabel>
-          <Select value={scope} onValueChange={(v) => setScope(v as "read" | "write")}>
+          <Select value={scope} onValueChange={(v) => v && setScope(v as "read" | "write")}>
             <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
@@ -108,7 +109,7 @@ export function ConsentForm({ request, companies, email }: { request: ConsentReq
         </Field>
         <Field>
           <FieldLabel>{t("Acts as role")}</FieldLabel>
-          <Select value={chosenRole} onValueChange={(v) => setRole(v as Role)}>
+          <Select value={chosenRole} onValueChange={(v) => v && setRole(v as Role)}>
             <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>

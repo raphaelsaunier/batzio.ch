@@ -95,7 +95,10 @@ function css() {
     for (const [name, v] of Object.entries(tokens.css)) lines.push(`  --${name}: ${v[mode]};`);
     return lines.join("\n");
   };
-  return `/* ${HEADER} */\n:root {\n${scheme("light")}\n}\n\n.dark {\n${scheme("dark")}\n}\n`;
+  // The web app's colour scheme lives on <html data-color-scheme="light|dark|system">
+  // (ui-sdk's createColorScheme); "system" follows the browser before any script runs.
+  const dark = scheme("dark");
+  return `/* ${HEADER} */\n:root {\n${scheme("light")}\n}\n\n[data-color-scheme="dark"] {\n${dark}\n}\n\n@media (prefers-color-scheme: dark) {\n  [data-color-scheme="system"] {\n${dark.replace(/^/gm, "  ")}\n  }\n}\n`;
 }
 
 function resolvedJson() {

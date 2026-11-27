@@ -95,17 +95,17 @@ export default async function TodayPage({ params }: { params: Promise<{ tenant: 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {numbers.map((n) => (
           <Link key={n.term} href={n.href} className="bg-card rounded-2xl border p-4 shadow-xs transition-shadow hover:shadow-md">
-            <p className="text-muted-foreground text-xs font-medium">
-              <Term id={n.term}>{n.label}</Term>
-            </p>
+            <div className="text-muted-foreground text-xs font-medium">
+              <Term id={n.term} portal>{n.label}</Term>
+            </div>
             <p className={cn("font-display num mt-1 text-xl font-semibold tracking-tight", n.tone)}>CHF {formatAmount(n.value)}</p>
           </Link>
         ))}
         {!finance && (
           <div className="bg-card rounded-2xl border p-4 shadow-xs">
-            <p className="text-muted-foreground text-xs font-medium">
+            <div className="text-muted-foreground text-xs font-medium">
               <Term id="billable">{t("Unbilled time")}</Term>
-            </p>
+            </div>
             <p className="font-display num mt-1 text-xl font-semibold">{formatDuration(d.unbilled.minutes)}</p>
           </div>
         )}
@@ -155,8 +155,8 @@ export default async function TodayPage({ params }: { params: Promise<{ tenant: 
               <CardTitle className="font-display">{t("What happened lately")}</CardTitle>
               <CardDescription>{t("Every change is in the tamper-proof log — who, what, when, and how.")}</CardDescription>
             </div>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href={`${base}/audit_log`}>{t("See all")}</Link>
+            <Button variant="ghost" size="sm" render={<Link href={`${base}/audit_log`} />}>
+              {t("See all")}
             </Button>
           </CardHeader>
           <CardContent>

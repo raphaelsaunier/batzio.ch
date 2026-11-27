@@ -3,7 +3,7 @@
 import { Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { toast } from "sonner";
+import { toast } from "@ui-sdk/react/toast";
 import { saveSequenceAction, saveSettingsAction } from "@/app/(app)/[tenant]/settings/actions";
 import { FieldInput } from "@/components/resource/field-input";
 import { Button } from "@/components/ui/button";

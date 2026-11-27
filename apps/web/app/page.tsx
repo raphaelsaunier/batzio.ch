@@ -40,15 +40,11 @@ export default async function LandingPage() {
             {t("Swiss bookkeeping that feels instant, works on every device and with your AI assistant, fits the tools you already use — and moves in from your old software in one click.")}
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Button size="lg" asChild>
-              <Link href={user ? "/select" : "/signup"}>
-                {user ? t("Open your companies") : t("Start free — demo data included")} <ArrowRight />
-              </Link>
+            <Button size="lg" render={<Link href={user ? "/select" : "/signup"} />}>
+              {user ? t("Open your companies") : t("Start free — demo data included")} <ArrowRight />
             </Button>
-            <Button size="lg" variant="outline" asChild>
-              <a href="#move-in">
-                <Truck /> {t("Switch in one click")}
-              </a>
+            <Button size="lg" variant="outline" render={<a href="#move-in" />}>
+              <Truck /> {t("Switch in one click")}
             </Button>
           </div>
           <div className="bg-border mt-14 grid w-full grid-cols-2 gap-px overflow-hidden rounded-2xl border sm:grid-cols-4">
@@ -182,10 +178,8 @@ export default async function LandingPage() {
         />
         <MoveInSteps />
         <div className="mt-10 flex justify-center">
-          <Button size="lg" asChild>
-            <Link href={user ? "/select" : "/signup"}>
-              <Truck /> {user ? t("Open your companies") : t("Start free and move in")}
-            </Link>
+          <Button size="lg" render={<Link href={user ? "/select" : "/signup"} />}>
+            <Truck /> {user ? t("Open your companies") : t("Start free and move in")}
           </Button>
         </div>
       </section>
@@ -208,10 +202,8 @@ export default async function LandingPage() {
             <h2 className="font-display text-2xl font-bold tracking-tight">{t("Your data, your exit door")}</h2>
             <p className="mt-2 max-w-xl text-white/80">{t("PDFs, Excel exports of every list and report, and a complete API. Leave whenever you like — we’ll be sad, but we’ll hold the door.")}</p>
           </div>
-          <Button size="lg" variant="secondary" asChild>
-            <Link href="/docs/api">
-              <FileCode2 /> {t("Explore the API")}
-            </Link>
+          <Button size="lg" variant="secondary" render={<Link href="/docs/api" />}>
+            <FileCode2 /> {t("Explore the API")}
           </Button>
         </div>
       </section>

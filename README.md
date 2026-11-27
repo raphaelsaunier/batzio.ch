@@ -8,7 +8,7 @@
 
 Drop a supplier bill, paste a screenshot, forward an email, or type one plain sentence, and **Batzi** (a Claude-powered bookkeeper) handles the entry. Underneath sits a complete Swiss SME accounting suite: contacts, quotes → orders → delivery notes → invoices with Swiss QR-bill, purchasing, full double-entry ledger with Swiss VAT, banking (`camt`/`pain`), projects and time tracking, and payroll — with a REST API, OpenAPI 3.1 docs, an MCP server, and a drop-in compatibility API.
 
-Built with **vinext** (Next.js App Router on Vite) on **Cloudflare Workers**, **shadcn/ui**, and **one Cloudflare D1 database per company** — plus native apps for **iPhone, iPad, and Mac** (SwiftUI), **Android** (Jetpack Compose), and **Windows** (WinUI 3), all driven from the same entity definitions, translations, and design tokens.
+Built with **vinext** (Next.js App Router on Vite) on **Cloudflare Workers**, **[ui-sdk](https://ui-sdk.dev)** (headless React components, styled with Tailwind), and **one Cloudflare D1 database per company** — plus native apps for **iPhone, iPad, and Mac** (SwiftUI), **Android** (Jetpack Compose), and **Windows** (WinUI 3), all driven from the same entity definitions, translations, and design tokens.
 
 Open source under the [GNU AGPL v3.0](LICENSE) · Hosted demo at [www.batzio.ch](https://www.batzio.ch).
 
@@ -394,7 +394,7 @@ The control database, R2 bucket, and tenant D1 slots are created automatically o
 
 ```
 apps/
-  web/                    vinext app: routes, components (shadcn), server actions, Worker entry (+ email)
+  web/                    vinext app: routes, components (ui-sdk), server actions, Worker entry (+ email)
   api/                    headless API Worker (REST, MCP, agent, drops, email)
   apple/                  project.yml (XcodeGen) · Batzio/ SwiftUI screens · BatzioKit/ Swift package
   android/                Gradle project · app/ (Compose, Navigation 3)

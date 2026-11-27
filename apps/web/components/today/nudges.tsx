@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { toast } from "sonner";
+import { toast } from "@ui-sdk/react/toast";
 import { dismissInboxAction } from "@/app/(app)/[tenant]/agent-actions";
 import { runRecordAction } from "@/app/(app)/[tenant]/actions";
 import { remindOverdueAction } from "@/app/(app)/[tenant]/ops-actions";
@@ -103,10 +103,8 @@ function NudgeCard({ nudge }: { nudge: ClientNudge }) {
           <div className="mt-3 flex flex-wrap gap-2">
             {actions.map((a) =>
               a.kind === "link" && a.href ? (
-                <Button key={a.label} size="sm" variant={a.primary ? "default" : "ghost"} asChild>
-                  <Link href={a.href} target={a.href.startsWith("/api/") ? "_blank" : undefined}>
-                    {a.label}
-                  </Link>
+                <Button key={a.label} size="sm" variant={a.primary ? "default" : "ghost"} render={<Link href={a.href} target={a.href.startsWith("/api/") ? "_blank" : undefined} />}>
+                  {a.label}
                 </Button>
               ) : (
                 <Button key={a.label} size="sm" variant={a.primary ? "default" : "ghost"} disabled={pending} onClick={() => run(a)}>

@@ -3,17 +3,19 @@
 import { Building2, Check, ChevronsUpDown, FileCode2, Glasses, LogOut, Moon, Plus, Sparkles, Sun } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
+import { usePreference } from "@ui-sdk/react/preferences";
 import { useTransition } from "react";
 import { logoutAction } from "@/app/(auth)/actions";
 import { setModeAction } from "@/app/(app)/[tenant]/actions";
 import { Batzi } from "@/components/fun/batzi";
+import { colorScheme } from "@/lib/color-scheme";
 import { Icon } from "@/components/icon";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -74,7 +76,7 @@ export function AppSidebar({
   const t = useT();
   const pathname = usePathname();
   const router = useRouter();
-  const { resolvedTheme, setTheme } = useTheme();
+  const { resolved: resolvedTheme } = usePreference(colorScheme);
   const { state } = useSidebar();
   const [pending, start] = useTransition();
   const base = `/${company.slug}`;
@@ -94,31 +96,27 @@ export function AppSidebar({
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton size="lg" className="rounded-xl data-[state=open]:bg-sidebar-accent">
-                  <Batzi mood="happy" className="size-9 animate-float" />
-                  <div className="grid flex-1 text-left leading-tight">
-                    <span className="truncate font-display text-[0.95rem] font-semibold text-sidebar-accent-foreground">{company.name}</span>
-                    <span className="truncate text-xs text-sidebar-foreground/70">{t(company.role)}</span>
-                  </div>
-                  <ChevronsUpDown className="ml-auto size-4 opacity-50" />
-                </SidebarMenuButton>
+              <DropdownMenuTrigger render={<SidebarMenuButton size="lg" className="rounded-xl data-open:bg-sidebar-accent" />}>
+                <Batzi mood="happy" className="size-9 animate-float" />
+                <div className="grid flex-1 text-left leading-tight">
+                  <span className="truncate font-display text-[0.95rem] font-semibold text-sidebar-accent-foreground">{company.name}</span>
+                  <span className="truncate text-xs text-sidebar-foreground/70">{t(company.role)}</span>
+                </div>
+                <ChevronsUpDown className="ml-auto size-4 opacity-50" />
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-64 rounded-xl" align="start" side="bottom">
-                <DropdownMenuLabel className="text-xs text-muted-foreground">{t("Your companies")}</DropdownMenuLabel>
-                {companies.map((c) => (
-                  <DropdownMenuItem key={c.slug} asChild>
-                    <Link href={`/${c.slug}`}>
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="text-xs text-muted-foreground">{t("Your companies")}</DropdownMenuLabel>
+                  {companies.map((c) => (
+                    <DropdownMenuItem key={c.slug} render={<Link href={`/${c.slug}`} />}>
                       <Building2 /> <span className="truncate">{c.name}</span>
                       {c.slug === company.slug && <Check className="ml-auto" />}
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/select">
-                    <Plus /> {t("Another company")}
-                  </Link>
+                <DropdownMenuItem render={<Link href="/select" />}>
+                  <Plus /> {t("Another company")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -150,15 +148,13 @@ export function AppSidebar({
               {section.items.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
-                    asChild
+                    render={<Link href={item.href} />}
                     isActive={isActive(item)}
                     tooltip={t(item.title)}
                     className="h-9 rounded-xl text-[0.9rem] transition-all data-[active=true]:bg-sidebar-accent data-[active=true]:font-semibold data-[active=true]:text-sidebar-accent-foreground data-[active=true]:shadow-soft"
                   >
-                    <Link href={item.href}>
-                      <Icon name={item.icon} />
-                      <span>{t(item.title)}</span>
-                    </Link>
+                    <Icon name={item.icon} />
+                    <span>{t(item.title)}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -189,29 +185,26 @@ export function AppSidebar({
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton size="lg" className="rounded-xl data-[state=open]:bg-sidebar-accent">
-                  <Avatar className="size-8 rounded-full">
-                    <AvatarFallback className="rounded-full bg-metal text-xs font-semibold text-white">{initials(user.name)}</AvatarFallback>
-                  </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium text-sidebar-accent-foreground">{user.name}</span>
-                    <span className="truncate text-xs text-sidebar-foreground/70">{user.email}</span>
-                  </div>
-                  <ChevronsUpDown className="ml-auto size-4 opacity-50" />
-                </SidebarMenuButton>
+              <DropdownMenuTrigger render={<SidebarMenuButton size="lg" className="rounded-xl data-open:bg-sidebar-accent" />}>
+                <Avatar className="size-8 rounded-full">
+                  <AvatarFallback className="rounded-full bg-metal text-xs font-semibold text-white">{initials(user.name)}</AvatarFallback>
+                </Avatar>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-medium text-sidebar-accent-foreground">{user.name}</span>
+                  <span className="truncate text-xs text-sidebar-foreground/70">{user.email}</span>
+                </div>
+                <ChevronsUpDown className="ml-auto size-4 opacity-50" />
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-60 rounded-xl" side="top" align="start">
-                <DropdownMenuItem onSelect={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}>
+                <DropdownMenuItem onSelect={() => colorScheme.set(resolvedTheme === "dark" ? "light" : "dark")}>
                   {resolvedTheme === "dark" ? <Sun /> : <Moon />} {resolvedTheme === "dark" ? t("Daylight, please") : t("Night mode")}
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/docs/api" target="_blank">
-                    <FileCode2 /> {t("API reference")}
-                  </Link>
+                <DropdownMenuItem render={<Link href="/docs/api" target="_blank" />}>
+                  <FileCode2 /> {t("API reference")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => logoutAction()}>
+                {/* The action redirects: returning its Promise would keep the item pending and the menu open. */}
+                <DropdownMenuItem onSelect={() => { void logoutAction(); }}>
                   <LogOut /> {t("Sign out")}
                 </DropdownMenuItem>
               </DropdownMenuContent>

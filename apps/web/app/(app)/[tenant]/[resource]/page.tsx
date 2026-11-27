@@ -119,10 +119,8 @@ export default async function ResourceListPage({ params, searchParams }: { param
             <>
               <ListExtras tenant={tenant} resource={res.name} />
               {canWrite && (
-                <Button asChild>
-                  <Link href={`${base}/new`}>
-                    <Plus /> {view.label}
-                  </Link>
+                <Button render={<Link href={`${base}/new`} />}>
+                  <Plus /> {view.label}
                 </Button>
               )}
             </>
@@ -176,10 +174,8 @@ export default async function ResourceListPage({ params, searchParams }: { param
           <>
             <ListExtras tenant={tenant} resource={res.name} />
             {canWrite && (
-              <Button asChild>
-                <Link href={`${base}/new`}>
-                  <Plus /> {view.label}
-                </Link>
+              <Button render={<Link href={`${base}/new`} />}>
+                <Plus /> {view.label}
               </Button>
             )}
           </>
@@ -226,10 +222,8 @@ export default async function ResourceListPage({ params, searchParams }: { param
                 {view.empty?.text && <p className="mx-auto max-w-sm text-sm">{view.empty.text}</p>}
               </div>
               {canWrite && (
-                <Button variant="outline" size="sm" asChild>
-                  <Link href={`${base}/new`}>
-                    <Plus /> {t("Create the first one")}
-                  </Link>
+                <Button variant="outline" size="sm" render={<Link href={`${base}/new`} />}>
+                  <Plus /> {t("Create the first one")}
                 </Button>
               )}
             </div>

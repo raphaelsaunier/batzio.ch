@@ -126,7 +126,7 @@ export async function RecordAside({ ctx, res, record }: { ctx: Ctx; res: Resourc
           {s.budgetUsedPercent !== null && (
             <div className="space-y-1 pt-2">
               <Line label="Budget used" value={`${s.budgetUsedPercent}%`} tone={s.budgetUsedPercent > 100 ? "danger" : undefined} />
-              <Progress value={Math.min(100, s.budgetUsedPercent)} />
+              <Progress aria-label={t("Budget used")} value={Math.min(100, s.budgetUsedPercent)} />
             </div>
           )}
         </CardContent>

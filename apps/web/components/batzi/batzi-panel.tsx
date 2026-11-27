@@ -1,11 +1,11 @@
 "use client";
 
 import { History, SquarePen } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { listThreadsAction } from "@/app/(app)/[tenant]/agent-actions";
 import { Batzi } from "@/components/fun/batzi";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { formatDateTime } from "@batzio/core/format";
 import { useT } from "@batzio/i18n/react";
@@ -19,20 +19,21 @@ function ThreadMenu() {
   const [threads, setThreads] = useState<Awaited<ReturnType<typeof listThreadsAction>>>([]);
   return (
     <DropdownMenu onOpenChange={(open) => open && listThreadsAction(tenant).then(setThreads)}>
-      <DropdownMenuTrigger asChild>
-        <Button size="icon-sm" variant="ghost" aria-label={t("Earlier conversations")}>
-          <History />
-        </Button>
+      <DropdownMenuTrigger render={<Button size="icon-sm" variant="ghost" aria-label={t("Earlier conversations")} />}>
+        <History />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
-        <DropdownMenuLabel>{t("Earlier conversations")}</DropdownMenuLabel>
-        {threads.length === 0 && <p className="text-muted-foreground px-2 py-1.5 text-xs">{t("Nothing yet.")}</p>}
-        {threads.map((th) => (
-          <DropdownMenuItem key={th.id} onSelect={() => openThread(th.id)} className="flex-col items-start gap-0">
-            <span className="w-full truncate text-sm">{th.title || t("Files")}</span>
-            <span className="text-muted-foreground text-[11px]">{formatDateTime(th.last)}</span>
-          </DropdownMenuItem>
-        ))}
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>{t("Earlier conversations")}</DropdownMenuLabel>
+          {threads.length === 0 && <p className="text-muted-foreground px-2 py-1.5 text-xs">{t("Nothing yet.")}</p>}
+          {threads.map((th) => (
+            // `void`: a returned Promise would keep the menu open until the thread has loaded.
+            <DropdownMenuItem key={th.id} onSelect={() => void openThread(th.id)} className="flex-col items-start gap-0">
+              <span className="w-full truncate text-sm">{th.title || t("Files")}</span>
+              <span className="text-muted-foreground text-[11px]">{formatDateTime(th.last)}</span>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -63,7 +64,7 @@ export function BatziPanel() {
   const { open, setOpen, turns, live, newThread } = useBatzi();
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-[460px]" showCloseButton={false}>
+      <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-[460px]" showCloseButton={false} initialFocus="textarea">
         <SheetHeader className="flex-row items-center gap-2 border-b px-4 py-3">
           <Batzi mood="happy" className="size-8" />
           <div className="min-w-0 flex-1">
@@ -79,7 +80,7 @@ export function BatziPanel() {
           <Conversation turns={turns} live={live} empty={<EmptyChat />} />
         </div>
         <div className="border-t p-3">
-          <Composer autoFocus compact />
+          <Composer compact />
         </div>
       </SheetContent>
     </Sheet>
@@ -90,9 +91,18 @@ export function BatziPanel() {
 export function DropOverlay() {
   const t = useT();
   const { dragging } = useBatzi();
+  const overlay = useRef<HTMLDivElement>(null);
+  // An open Batzi sheet or dialog sits in the top layer: a manual popover joins it, above them.
+  useEffect(() => {
+    if (dragging && !overlay.current?.matches(":popover-open")) overlay.current?.showPopover();
+  }, [dragging]);
   if (!dragging) return null;
   return (
-    <div className="bg-background/70 animate-in fade-in pointer-events-none fixed inset-0 z-[60] flex items-center justify-center backdrop-blur-sm">
+    <div
+      ref={overlay}
+      popover="manual"
+      className="bg-background/70 text-foreground animate-in fade-in pointer-events-none fixed inset-0 z-[60] flex size-full items-center justify-center backdrop-blur-sm"
+    >
       <div className="border-primary/50 bg-card/90 mx-4 flex max-w-md flex-col items-center gap-3 rounded-3xl border-2 border-dashed px-10 py-9 text-center shadow-2xl">
         <Batzi mood="party" className="size-20 animate-bounce [animation-duration:1.2s]" />
         <p className="font-display text-2xl font-bold">{t("Drop it like it’s hot")}</p>

@@ -2,8 +2,8 @@
 
 import { Check, Copy, KeyRound, Trash2, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { toast } from "sonner";
+import { useEffect, useState, useTransition } from "react";
+import { toast } from "@ui-sdk/react/toast";
 import { createApiKeyAction, inviteMemberAction, removeMemberAction, revokeApiKeyAction, revokeOauthAction, setRoleAction } from "@/app/(app)/[tenant]/settings/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -14,11 +14,24 @@ import { Spinner } from "@/components/ui/spinner";
 import { ROLE_LABELS, ROLES } from "@batzio/core/permissions";
 import { useT } from "@batzio/i18n/react";
 
-function RoleSelect({ value, onChange, disabled, exclude = [] }: { value: string; onChange: (v: string) => void; disabled?: boolean; exclude?: string[] }) {
+function RoleSelect({
+  value,
+  onChange,
+  disabled,
+  exclude = [],
+  "aria-label": ariaLabel,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  disabled?: boolean;
+  exclude?: string[];
+  /** Names the trigger where no FieldLabel does. */
+  "aria-label"?: string;
+}) {
   const t = useT();
   return (
-    <Select value={value} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger className="h-8 w-40">
+    <Select value={value} onValueChange={(v) => v && onChange(v)} disabled={disabled}>
+      <SelectTrigger className="h-8 w-40" aria-label={ariaLabel}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
@@ -106,6 +119,9 @@ export function InviteForm({ tenant }: { tenant: string }) {
 export function MemberControls({ tenant, userId, role, isSelf, canManage }: { tenant: string; userId: string; role: string; isSelf: boolean; canManage: boolean }) {
   const t = useT();
   const router = useRouter();
+  // The select shows the picked role at once; the refresh confirms it, and a failure puts the old one back.
+  const [current, setCurrent] = useState(role);
+  useEffect(() => setCurrent(role), [role]);
   const [pending, start] = useTransition();
   const run = (fn: () => Promise<{ ok: boolean; message?: string; error?: string }>) =>
     start(async () => {
@@ -116,7 +132,19 @@ export function MemberControls({ tenant, userId, role, isSelf, canManage }: { te
     });
   return (
     <div className="flex items-center justify-end gap-2">
-      <RoleSelect value={role} disabled={!canManage || pending} onChange={(v) => run(() => setRoleAction(tenant, userId, v))} />
+      <RoleSelect
+        value={current}
+        aria-label={t("Role")}
+        disabled={!canManage || pending}
+        onChange={(v) => {
+          setCurrent(v);
+          run(async () => {
+            const r = await setRoleAction(tenant, userId, v);
+            if (!r.ok) setCurrent(role);
+            return r;
+          });
+        }}
+      />
       {canManage && !isSelf && (
         <Button variant="ghost" size="icon-sm" disabled={pending} onClick={() => run(() => removeMemberAction(tenant, userId))} aria-label={t("Remove member")}>
           <Trash2 className="text-muted-foreground" />
@@ -156,7 +184,7 @@ export function ApiKeyForm({ tenant, maxRole }: { tenant: string; maxRole: strin
         </Field>
         <Field className="w-auto">
           <FieldLabel>{t("Access")}</FieldLabel>
-          <Select value={scope} onValueChange={(v) => setScope(v as "read" | "write")}>
+          <Select value={scope} onValueChange={(v) => v && setScope(v as "read" | "write")}>
             <SelectTrigger className="h-8 w-36">
               <SelectValue />
             </SelectTrigger>

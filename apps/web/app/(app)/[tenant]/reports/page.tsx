@@ -32,7 +32,7 @@ export default async function ReportsPage({ params }: { params: Promise<{ tenant
                   </span>
                   <div className="space-y-1">
                     <CardTitle className="font-display">
-                      <Term label={r.title}>{t(r.title)}</Term>
+                      <Term label={r.title} portal>{t(r.title)}</Term>
                     </CardTitle>
                     <CardDescription>{t(r.text)}</CardDescription>
                   </div>

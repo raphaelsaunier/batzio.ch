@@ -47,9 +47,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ tenan
             <CardDescription>{t("Claude, ChatGPT and your own tools, with the access you choose.")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button asChild>
-              <Link href={`/${tenant}/settings/api`}>{t("Manage connections")}</Link>
-            </Button>
+            <Button render={<Link href={`/${tenant}/settings/api`} />}>{t("Manage connections")}</Button>
           </CardContent>
         </Card>
         <Card className="shadow-xs">

@@ -29,7 +29,13 @@ export function RecordTabs({ tabs, children }: { tabs: RecordTab[]; children: Re
   const row = picked ? [...shown, picked] : shown;
 
   return (
-    <Tabs value={value} onValueChange={setValue} className="gap-4">
+    <Tabs
+      value={value}
+      onValueChange={(next) => {
+        if (next !== null) setValue(next);
+      }}
+      className="gap-4"
+    >
       <div className="flex items-center gap-2 border-b">
         <div className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <TabsList variant="line" className="h-10 w-max gap-0 p-0">
@@ -44,10 +50,8 @@ export function RecordTabs({ tabs, children }: { tabs: RecordTab[]; children: Re
         </div>
         {empty.length > 0 && (
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-muted-foreground shrink-0">
-                {t("More")} <ChevronDown />
-              </Button>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="text-muted-foreground shrink-0" />}>
+              {t("More")} <ChevronDown />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-auto">
               {empty.map((tab) => (

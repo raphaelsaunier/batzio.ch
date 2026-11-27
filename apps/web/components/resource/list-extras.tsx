@@ -4,7 +4,7 @@ import { BellRing, Copy, FileDown, Repeat, ShieldCheck, Upload, Banknote } from 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { toast } from "sonner";
+import { toast } from "@ui-sdk/react/toast";
 import type { ActionResponse } from "@/app/(app)/[tenant]/actions";
 import { remindOverdueAction, runRecurringAction, scanDuplicatesAction, verifyAuditAction } from "@/app/(app)/[tenant]/ops-actions";
 import { Button } from "@/components/ui/button";
@@ -47,27 +47,21 @@ export function ListExtras({ tenant, resource }: { tenant: string; resource: str
       return <OpButton label={t("Look for duplicates")} icon={<Copy />} run={() => scanDuplicatesAction(tenant)} />;
     case "bank_transactions":
       return (
-        <Button variant="outline" asChild>
-          <Link href={`/${tenant}/banking/import`}>
-            <Upload /> {t("Import statement")}
-          </Link>
+        <Button variant="outline" render={<Link href={`/${tenant}/banking/import`} />}>
+          <Upload /> {t("Import statement")}
         </Button>
       );
     case "outgoing_payments":
       return (
-        <Button variant="outline" asChild>
-          <Link href={`/${tenant}/banking/import#pain001`}>
-            <FileDown /> Export pain.001
-          </Link>
+        <Button variant="outline" render={<Link href={`/${tenant}/banking/import#pain001`} />}>
+          <FileDown /> Export pain.001
         </Button>
       );
     case "payslips":
     case "employees":
       return (
-        <Button variant="outline" asChild>
-          <Link href={`/${tenant}/payroll`}>
-            <Banknote /> Payroll run
-          </Link>
+        <Button variant="outline" render={<Link href={`/${tenant}/payroll`} />}>
+          <Banknote /> Payroll run
         </Button>
       );
     default:

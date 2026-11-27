@@ -111,13 +111,11 @@ export default async function PricingPage() {
           />
           <YearCosts />
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Button size="lg" asChild>
-              <Link href="/signup">{t("Start free — demo data included")}</Link>
+            <Button size="lg" render={<Link href="/signup" />}>
+              {t("Start free — demo data included")}
             </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link href="/vs/bexio">
-                {t("See the full comparison")} <ArrowRight />
-              </Link>
+            <Button size="lg" variant="outline" render={<Link href="/vs/bexio" />}>
+              {t("See the full comparison")} <ArrowRight />
             </Button>
           </div>
         </div>

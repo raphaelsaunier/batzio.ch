@@ -1,56 +1,42 @@
-"use client"
-
 import * as React from "react"
 import { cn } from "cn"
-import { Tooltip as TooltipPrimitive } from "radix-ui"
-
-function TooltipProvider({
-  delayDuration = 0,
-  ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
-  return (
-    <TooltipPrimitive.Provider
-      data-slot="tooltip-provider"
-      delayDuration={delayDuration}
-      {...props}
-    />
-  )
-}
+import {
+  Tooltip as TooltipPrimitive,
+  TooltipArrow,
+  TooltipContent as TooltipContentPrimitive,
+  TooltipTrigger,
+} from "@ui-sdk/react/tooltip"
 
 function Tooltip({
+  delay = 300,
   ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Root>) {
-  return <TooltipPrimitive.Root data-slot="tooltip" {...props} />
+}: React.ComponentProps<typeof TooltipPrimitive>) {
+  return <TooltipPrimitive delay={delay} {...props} />
 }
 
-function TooltipTrigger({
-  ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
-  return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
-}
-
+// The 10px default offset makes room for the arrow, as Radix did.
 function TooltipContent({
   className,
-  sideOffset = 0,
+  sideOffset = 10,
   children,
   ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Content>) {
+}: Omit<
+  React.ComponentProps<typeof TooltipContentPrimitive>,
+  "className" | "children"
+> & { className?: string; children?: React.ReactNode }) {
   return (
-    <TooltipPrimitive.Portal>
-      <TooltipPrimitive.Content
-        data-slot="tooltip-content"
-        sideOffset={sideOffset}
-        className={cn(
-          "z-50 inline-flex w-fit max-w-xs origin-(--radix-tooltip-content-transform-origin) items-center gap-1.5 rounded-md bg-foreground px-3 py-1.5 text-xs text-background has-data-[slot=kbd]:pr-1.5 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 **:data-[slot=kbd]:relative **:data-[slot=kbd]:isolate **:data-[slot=kbd]:z-50 **:data-[slot=kbd]:rounded-sm data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
-          className
-        )}
-        {...props}
-      >
-        {children}
-        <TooltipPrimitive.Arrow className="z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px] bg-foreground fill-foreground" />
-      </TooltipPrimitive.Content>
-    </TooltipPrimitive.Portal>
+    <TooltipContentPrimitive
+      sideOffset={sideOffset}
+      className={cn(
+        "inline-flex w-fit max-w-xs origin-(--transform-origin) items-center gap-1.5 rounded-md bg-foreground px-3 py-1.5 text-xs text-background transition-[opacity,scale,translate] duration-150 has-data-[slot=kbd]:pr-1.5 not-data-instant:data-starting-style:scale-95 not-data-instant:data-starting-style:opacity-0 data-[side=bottom]:not-data-instant:data-starting-style:-translate-y-2 data-[side=left]:not-data-instant:data-starting-style:translate-x-2 data-[side=right]:not-data-instant:data-starting-style:-translate-x-2 data-[side=top]:not-data-instant:data-starting-style:translate-y-2 data-ending-style:scale-95 data-ending-style:opacity-0 motion-reduce:transition-none **:data-[slot=kbd]:relative **:data-[slot=kbd]:isolate **:data-[slot=kbd]:z-50 **:data-[slot=kbd]:rounded-sm",
+        className
+      )}
+      {...props}
+    >
+      {children}
+      <TooltipArrow className="size-2.5 rotate-45 rounded-[2px] bg-foreground data-[side=bottom]:bottom-full data-[side=bottom]:translate-y-[calc(50%_+_2px)] data-[side=left]:left-full data-[side=left]:translate-x-[calc(-50%_-_2px)] data-[side=right]:right-full data-[side=right]:translate-x-[calc(50%_+_2px)] data-[side=top]:top-full data-[side=top]:translate-y-[calc(-50%_-_2px)]" />
+    </TooltipContentPrimitive>
   )
 }
 
-export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger }
+export { Tooltip, TooltipContent, TooltipTrigger }

@@ -26,27 +26,23 @@ export async function MarketingHeader({ home = "" }: { home?: string }) {
           <Brand />
           <nav className="hidden items-center gap-1 lg:flex" aria-label={t("Sections")}>
             {nav.map(([href, label]) => (
-              <Button key={href} variant="ghost" size="sm" asChild>
-                <a href={href.startsWith("/") ? href : `${home}${href}`}>{label}</a>
+              <Button key={href} variant="ghost" size="sm" render={<a href={href.startsWith("/") ? href : `${home}${href}`} />}>
+                {label}
               </Button>
             ))}
           </nav>
           <div className="flex items-center gap-2">
             <LocaleSwitcher compact className="hidden sm:inline-flex" />
             {user ? (
-              <Button asChild>
-                <Link href="/select">
-                  {t("Open Batzio")} <ArrowRight />
-                </Link>
+              <Button render={<Link href="/select" />}>
+                {t("Open Batzio")} <ArrowRight />
               </Button>
             ) : (
               <>
-                <Button variant="ghost" asChild>
-                  <Link href="/login">{t("Sign in")}</Link>
+                <Button variant="ghost" render={<Link href="/login" />}>
+                  {t("Sign in")}
                 </Button>
-                <Button asChild>
-                  <Link href="/signup">{t("Start free")}</Link>
-                </Button>
+                <Button render={<Link href="/signup" />}>{t("Start free")}</Button>
               </>
             )}
           </div>

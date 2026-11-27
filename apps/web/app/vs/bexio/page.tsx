@@ -252,10 +252,8 @@ export default async function VsBexioPage() {
           />
           <MoveInSteps />
           <div className="mt-10 flex flex-wrap justify-center gap-3">
-            <Button size="lg" asChild>
-              <Link href="/signup">
-                <Truck /> {t("Start free and move in")}
-              </Link>
+            <Button size="lg" render={<Link href="/signup" />}>
+              <Truck /> {t("Start free and move in")}
             </Button>
           </div>
         </div>

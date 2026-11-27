@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@ui-sdk/react/toast";
 import { loadThreadAction } from "@/app/(app)/[tenant]/agent-actions";
 import { confetti } from "@/components/fun/confetti";
 import type { AgentEvent } from "@batzio/server/agent/claude";

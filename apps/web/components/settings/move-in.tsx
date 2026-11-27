@@ -4,7 +4,7 @@ import { Check, ChevronRight, Loader2, Truck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@ui-sdk/react/toast";
 import { importStepAction } from "@/app/(app)/[tenant]/settings/actions";
 import { confetti } from "@/components/fun/confetti";
 import { Button } from "@/components/ui/button";
@@ -149,10 +149,8 @@ export function MoveIn({ tenant, defaultUrl, last }: { tenant: string; defaultUr
             </details>
           ) : null}
           {current === "done" && (
-            <Button asChild variant="outline" className="mt-4">
-              <Link href={`/${tenant}`}>
-                {t("Open Today")} <ChevronRight />
-              </Link>
+            <Button variant="outline" className="mt-4" render={<Link href={`/${tenant}`} />}>
+              {t("Open Today")} <ChevronRight />
             </Button>
           )}
         </CardContent>

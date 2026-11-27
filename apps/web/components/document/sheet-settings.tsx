@@ -3,7 +3,7 @@
 import { ImageUp, Save, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
-import { toast } from "sonner";
+import { toast } from "@ui-sdk/react/toast";
 import { saveRecordAction, type ActionResponse } from "@/app/(app)/[tenant]/actions";
 import { saveSettingsAction, setLogoAction } from "@/app/(app)/[tenant]/settings/actions";
 import { useBatzi } from "@/components/batzi/batzi-provider";
@@ -131,6 +131,15 @@ export function useCompanyParts(tenant: string, sheet: SheetContext, bankId: num
   };
 }
 
+/**
+ * Pickers open their list in place, inside the label around them, so a press in the list would
+ * also press the label's control and open the list again. Labels around a field call this on click.
+ */
+export function ignorePopupClicks(e: React.MouseEvent<HTMLElement>) {
+  const popup = e.target instanceof Element ? e.target.closest("[popover]") : null;
+  if (popup && !popup.contains(e.currentTarget)) e.preventDefault();
+}
+
 /** Settings fields on a six-column grid, with their hint or error underneath. */
 export function SettingsFields({
   tenant,
@@ -157,7 +166,7 @@ export function SettingsFields({
         const field = byName.get(name);
         if (!field) return null;
         return (
-          <label key={name} className={cn("block min-w-0 space-y-1", SPAN[span])}>
+          <label key={name} className={cn("flex min-w-0 flex-col gap-1", SPAN[span])} onClick={ignorePopupClicks}>
             <span className="text-muted-foreground block truncate text-xs font-medium">{field.label}</span>
             <FieldInput id={`sheet-${name}`} field={field} value={v[name]} onChange={(value) => onChange(name, value)} tenant={tenant} invalid={!!errors[name]} disabled={disabled} />
             {errors[name] ? <span className="text-destructive block text-xs">{errors[name]}</span> : field.description ? <span className="text-muted-foreground block text-xs">{field.description}</span> : null}

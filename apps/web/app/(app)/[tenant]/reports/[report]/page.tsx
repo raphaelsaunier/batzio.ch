@@ -39,15 +39,11 @@ const Num = ({ v, strong, className }: { v: number; strong?: boolean; className?
 function Exports({ href }: { href: string }) {
   return (
     <>
-      <Button variant="outline" asChild>
-        <a href={`${href}&format=pdf`} target="_blank" rel="noreferrer">
-          <FileDown /> PDF
-        </a>
+      <Button variant="outline" render={<a href={`${href}&format=pdf`} target="_blank" rel="noreferrer" />}>
+        <FileDown /> PDF
       </Button>
-      <Button variant="outline" asChild>
-        <a href={`${href}&format=xlsx`}>
-          <Sheet /> Excel
-        </a>
+      <Button variant="outline" render={<a href={`${href}&format=xlsx`} />}>
+        <Sheet /> Excel
       </Button>
     </>
   );
@@ -361,10 +357,8 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
         to,
       );
       actions = (
-        <Button variant="outline" asChild>
-          <a href={`/api/v1/journal_entries?format=xlsx&tenant=${tenant}&date_gte=${from}&date_lte=${to}`}>
-            <Sheet /> Excel
-          </a>
+        <Button variant="outline" render={<a href={`/api/v1/journal_entries?format=xlsx&tenant=${tenant}&date_gte=${from}&date_lte=${to}`} />}>
+          <Sheet /> Excel
         </Button>
       );
       content = (
@@ -416,10 +410,8 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
       const r = await openItems(ctx, type);
       filters = null;
       actions = (
-        <Button variant="outline" asChild>
-          <a href={`/api/v1/${type === "receivables" ? "invoices" : "bills"}?format=xlsx&tenant=${tenant}&status_in=${type === "receivables" ? "open,partial" : "booked,partial"}`}>
-            <Sheet /> Excel
-          </a>
+        <Button variant="outline" render={<a href={`/api/v1/${type === "receivables" ? "invoices" : "bills"}?format=xlsx&tenant=${tenant}&status_in=${type === "receivables" ? "open,partial" : "booked,partial"}`} />}>
+          <Sheet /> Excel
         </Button>
       );
       content = (
@@ -511,8 +503,8 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
       filters = (
         <div className="flex gap-1">
           {[y - 1, y, y + 1].map((v) => (
-            <Button key={v} variant={v === y ? "default" : "outline"} size="sm" asChild>
-              <Link href={`?year=${v}`}>{v}</Link>
+            <Button key={v} variant={v === y ? "default" : "outline"} size="sm" render={<Link href={`?year=${v}`} />}>
+              {v}
             </Button>
           ))}
         </div>

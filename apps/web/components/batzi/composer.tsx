@@ -2,7 +2,7 @@
 
 import { ArrowUp, Loader2, Paperclip, Wand2, X, Zap } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { toast } from "sonner";
+import { toast } from "@ui-sdk/react/toast";
 import { planQuickAction, runQuickAction } from "@/app/(app)/[tenant]/agent-actions";
 import { confetti } from "@/components/fun/confetti";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ export { QUICK_EXAMPLES as EXAMPLES } from "@batzio/server/agent/quick";
 import { QUICK_EXAMPLES as EXAMPLES } from "@batzio/server/agent/quick";
 
 /** One sentence, any language: a live preview for quick ones, Batzi for everything else. */
-export function Composer({ autoFocus, className, compact }: { autoFocus?: boolean; className?: string; compact?: boolean }) {
+export function Composer({ className, compact }: { className?: string; compact?: boolean }) {
   const t = useT();
   const m = useMsg();
   const { tenant, agent, ask, busy, upload } = useBatzi();
@@ -86,7 +86,7 @@ export function Composer({ autoFocus, className, compact }: { autoFocus?: boolea
       }
       const o = res.outcome;
       toast.success(m(o.message), {
-        action: o.record ? { label: t("Open"), onClick: () => (window.location.href = `/${tenant}/${o.record!.resource}/${o.record!.id}`) } : undefined,
+        action: o.record ? { label: t("Open"), href: `/${tenant}/${o.record.resource}/${o.record.id}` } : undefined,
       });
       if (o.celebrate) confetti();
       setText("");
@@ -176,7 +176,6 @@ export function Composer({ autoFocus, className, compact }: { autoFocus?: boolea
         )}
         <textarea
           ref={input}
-          autoFocus={autoFocus}
           rows={1}
           value={text}
           onChange={(e) => setText(e.target.value)}

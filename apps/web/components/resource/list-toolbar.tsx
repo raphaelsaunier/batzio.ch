@@ -29,12 +29,23 @@ export function ListToolbar({
   const params = useSearchParams();
   const [q, setQ] = useState(params.get("q") ?? "");
   const [pending, startTransition] = useTransition();
+  // Picked filter values, shown at once while the URL catches up.
+  const [picked, setPicked] = useState<Record<string, string>>({});
+  const search = params.toString();
+  useEffect(() => setPicked({}), [search]);
 
   const push = (mutate: (p: URLSearchParams) => void) => {
     const next = new URLSearchParams(params.toString());
     mutate(next);
     next.delete("page");
     startTransition(() => router.replace(`${pathname}?${next.toString()}`));
+  };
+
+  const filterValue = (name: string) => picked[name] ?? params.get(name) ?? ALL;
+  const pick = (name: string, v: string | null) => {
+    if (v === null) return;
+    setPicked((s) => ({ ...s, [name]: v }));
+    push((p) => (v === ALL ? p.delete(name) : p.set(name, v)));
   };
 
   useEffect(() => {
@@ -60,12 +71,8 @@ export function ListToolbar({
         )}
       </InputGroup>
       {filters.map((f) => (
-        <Select
-          key={f.name}
-          value={params.get(f.name) ?? ALL}
-          onValueChange={(v) => push((p) => (v === ALL ? p.delete(f.name) : p.set(f.name, v)))}
-        >
-          <SelectTrigger size="sm" className="h-8 min-w-32">
+        <Select key={f.name} value={filterValue(f.name)} onValueChange={(v) => pick(f.name, v)}>
+          <SelectTrigger size="sm" aria-label={f.label} className="h-8 min-w-32">
             <Filter className="size-3.5 opacity-60" />
             <SelectValue placeholder={f.label} />
           </SelectTrigger>
@@ -87,11 +94,8 @@ export function ListToolbar({
         </Select>
       ))}
       {archivable && (
-        <Select
-          value={params.get("archived") ?? ALL}
-          onValueChange={(v) => push((p) => (v === ALL ? p.delete("archived") : p.set("archived", v)))}
-        >
-          <SelectTrigger size="sm" className="h-8">
+        <Select value={filterValue("archived")} onValueChange={(v) => pick("archived", v)}>
+          <SelectTrigger size="sm" aria-label={t("Show archived")} className="h-8">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -109,10 +113,12 @@ export function ListToolbar({
       <div className="ml-auto flex items-center gap-2">
         {children}
         {exportHref && (
-          <Button variant="outline" size="sm" asChild>
-            <a href={`${exportHref}${exportHref.includes("?") ? "&" : "?"}${new URLSearchParams([...params.entries()].filter(([k]) => k !== "page")).toString()}`}>
-              <Download /> Excel
-            </a>
+          <Button
+            variant="outline"
+            size="sm"
+            render={<a href={`${exportHref}${exportHref.includes("?") ? "&" : "?"}${new URLSearchParams([...params.entries()].filter(([k]) => k !== "page")).toString()}`} />}
+          >
+            <Download /> Excel
           </Button>
         )}
       </div>
