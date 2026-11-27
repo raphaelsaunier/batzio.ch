@@ -8,30 +8,33 @@ import {
   tenantDatabaseSlots,
 } from "@batzio/server/config/tenant-databases";
 
-/** Production lives on www.batzio.ch (the apex redirects there with a zone rule). */
-const PRODUCTION_URL = "https://www.batzio.ch";
+/** Production URL (override with APP_URL for self-hosted deployments). */
+const PRODUCTION_URL = process.env.APP_URL || "https://www.batzio.ch";
 
 /**
  * Preview deploys neither create D1 databases nor resolve them by name (a
- * binding without an id is silently dropped), so the preview databases are
- * pinned by id. Create new ones with `cf d1 create <name>` and add them here.
+ * binding without an id is silently dropped), so preview database ids can be
+ * provided via environment variables when using `pnpm deploy:preview`.
  */
-const PREVIEW_DATABASE_IDS: Record<string, string> = {
-  [PREVIEW_CONTROL_DATABASE_NAME]: "6b4cf66f-6535-4ce2-be59-c0aa2bf44d71",
-  "batzio-preview-tenant-001": "f163ba13-332d-43e2-95bd-02604ee38b23",
-  "batzio-preview-tenant-002": "bc486a0f-502c-4279-aca8-0ecdad02bc5a",
+const PREVIEW_DATABASE_IDS: Record<string, string | undefined> = {
+  [PREVIEW_CONTROL_DATABASE_NAME]: process.env.PREVIEW_CONTROL_DB_ID,
+  "batzio-preview-tenant-001": process.env.PREVIEW_TENANT_DB_001_ID,
+  "batzio-preview-tenant-002": process.env.PREVIEW_TENANT_DB_002_ID,
 };
 
 export default defineConfig({
-  // Personal account (also settable through CLOUDFLARE_ACCOUNT_ID).
-  accountId: "f0a2e7131fd38eedc63c8c42eb086189",
+  // Set CLOUDFLARE_ACCOUNT_ID in your environment when deploying.
+  accountId: process.env.CLOUDFLARE_ACCOUNT_ID,
   worker: defineWorker(({ isPreview, mode }) => {
     // Previews (`pnpm deploy:preview`) bind their own databases and bucket.
     const preview = isPreview || mode === "preview";
     // Only the production deploy has a fixed public address; dev and previews use the request's host.
     const production = !preview && mode === "production";
     const slots = preview ? previewTenantDatabaseSlots : tenantDatabaseSlots;
-    const d1 = (name: string) => bindings.d1(preview ? { name, id: PREVIEW_DATABASE_IDS[name] } : { name });
+    const d1 = (name: string) => {
+      const id = preview ? PREVIEW_DATABASE_IDS[name] : undefined;
+      return bindings.d1(id ? { name, id } : { name });
+    };
     return {
       name: "batzio",
       entrypoint: "./worker/index.ts",

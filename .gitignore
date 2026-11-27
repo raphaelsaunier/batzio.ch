@@ -25,7 +25,8 @@ apps/apple/*.xcodeproj/
 DerivedData/
 .kotlin/
 
-# local reference material (never versioned)
+# local tooling & reference material (never versioned)
+.claude/
 tmp/
 
 # OS

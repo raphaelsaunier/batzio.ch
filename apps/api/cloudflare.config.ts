@@ -4,8 +4,8 @@ import { CONTROL_DATABASE_NAME, FILES_BUCKET_NAME, tenantDatabaseSlots } from "@
 const tenantDatabases = Object.fromEntries(tenantDatabaseSlots.map((slot) => [slot.binding, bindings.d1({ name: slot.name })]));
 
 export default defineConfig({
-  // Personal account (also settable through CLOUDFLARE_ACCOUNT_ID).
-  accountId: "f0a2e7131fd38eedc63c8c42eb086189",
+  // Set CLOUDFLARE_ACCOUNT_ID in your environment when deploying.
+  accountId: process.env.CLOUDFLARE_ACCOUNT_ID,
   worker: defineWorker({
     name: "batzio-api",
     entrypoint: "./src/index.ts",

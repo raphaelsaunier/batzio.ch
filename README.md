@@ -1,271 +1,396 @@
+<p align="center">
+  <img src="docs/banner.jpg" alt="Batzio — Agent-first Swiss accounting" width="100%" />
+</p>
+
 # Batzio
 
-*Accounting, Sweet!* — Swiss business and accounting software for people who would rather spend their time on something other than accounting. It is **agent-first**: drop a bill, paste a screenshot, forward an email or type one sentence, and Batzi (a Claude-powered bookkeeper) books it. Underneath sits everything a Swiss SME needs: contacts, sales (quotes → orders → delivery notes → invoices with QR-bill), purchasing, a complete double-entry ledger with Swiss VAT, banking (camt/pain), projects and time tracking, and payroll — with a REST API, OpenAPI documentation and an MCP server for your own AI agents.
+*Accounting, Sweet!* — **Agent-first, open-source Swiss business and accounting software** for people who would rather spend their time on something other than accounting.
 
-Built with **vinext** (Next.js App Router on Vite) for **Cloudflare Workers**, **shadcn/ui**, and **one Cloudflare D1 database per company** — plus native apps for **iPhone, iPad, Mac and Apple Vision Pro** (one SwiftUI app), **Android** (Jetpack Compose) and **Windows** (WinUI 3), all in this monorepo and all drawn from the same definitions, translations and design tokens.
+Drop a supplier bill, paste a screenshot, forward an email, or type one plain sentence, and **Batzi** (a Claude-powered bookkeeper) handles the entry. Underneath sits a complete Swiss SME accounting suite: contacts, quotes → orders → delivery notes → invoices with Swiss QR-bill, purchasing, full double-entry ledger with Swiss VAT, banking (`camt`/`pain`), projects and time tracking, and payroll — with a REST API, OpenAPI 3.1 docs, an MCP server, and a drop-in compatibility API.
 
-Open source under the [GNU AGPL v3.0](LICENSE): run it on your own server for free, or use the hosted version at [www.batzio.ch](https://www.batzio.ch).
+Built with **vinext** (Next.js App Router on Vite) on **Cloudflare Workers**, **shadcn/ui**, and **one Cloudflare D1 database per company** — plus native apps for **iPhone, iPad, and Mac** (SwiftUI), **Android** (Jetpack Compose), and **Windows** (WinUI 3), all driven from the same entity definitions, translations, and design tokens.
+
+Open source under the [GNU AGPL v3.0](LICENSE) · Hosted demo at [www.batzio.ch](https://www.batzio.ch).
+
+> [!WARNING]
+> **Disclaimer — Experimental Software**
+>
+> Batzio is an experimental ("vibe-coded") project and is **not** audited, certified, or legally vetted accounting, tax, or payroll software. **Do not rely on it for real company books, VAT filings, payroll declarations, or legal compliance** without independent verification by a qualified Swiss accountant (*Treuhänder* / *fiduciaire*).
+>
+> AI-assisted actions (Batzi) can make mistakes and must be reviewed. This software is provided **"AS IS"** without warranty of any kind under the [GNU AGPL v3.0](LICENSE); the authors accept no liability for financial, tax, or legal consequences arising from its use.
 
 ---
 
-## Features
+## Screenshots
+
+<p align="center">
+  <a href="apps/web/public/marketing/mac-insights.webp"><img src="apps/web/public/marketing/mac-insights.webp" alt="Batzio on macOS — Insights" height="250" /></a>&nbsp;
+  <a href="apps/web/public/marketing/ipad-invoice.webp"><img src="apps/web/public/marketing/ipad-invoice.webp" alt="Batzio on iPadOS — Invoice in German" height="250" /></a>&nbsp;
+  <a href="apps/web/public/marketing/iphone-today.webp"><img src="apps/web/public/marketing/iphone-today.webp" alt="Batzio on iOS — Today and Money Weather" height="250" /></a>&nbsp;
+  <a href="apps/web/public/marketing/android-invoices.webp"><img src="apps/web/public/marketing/android-invoices.webp" alt="Batzio on Android — Invoices in French" height="250" /></a>
+</p>
+<p align="center">
+  <sub>macOS (Insights) · iPadOS (Invoice, DE) · iOS (Today &amp; Money Weather) · Android (Invoices, FR) — click any screenshot to enlarge</sub>
+</p>
+
+---
+
+## Design goals
+
+1. **Agent-first, human-in-the-loop.** Every workflow in the UI is also a first-class tool for Batzi, external AI agents (via MCP), and deterministic quick sentences. Destructive or irreversible actions always pause for explicit confirmation, and untrusted inputs (uploaded files, external emails) are treated strictly as data, never instructions.
+2. **Swiss-native without the jargon.** Built around Swiss SME standards — KMU chart of accounts, Swiss VAT (8.1% / 2.6% / 3.8%, ESTV form digits), QR-bills, ISO 20022 (`camt.052/053/054`, `pain.001.001.09`), and Swiss payroll (AHV/IV/EO, ALV, BVG, NBU, KTG) — in **English, Deutsch, Français, and Italiano**, with plain-language tooltips and an *"Accountant goggles"* toggle for classic terminology.
+3. **Instant and local-first.** Web navigation targets 10–30 ms using hover/focus prefetching and IndexedDB-backed live lists (TanStack DB). Every native app can also run completely **on-device with no server or account**, executing the exact same TypeScript engine on local SQLite files.
+4. **One definition, every surface.** Each business entity is defined once (`packages/server/src/resources/defs/*`) and automatically drives validation, persistence, audit logging, REST endpoints, OpenAPI 3.1, MCP tools, XLSX exports, web screens, and every schema-driven native app. Design tokens, icons, and translations are generated from a single source of truth (`pnpm gen`).
+5. **Strict tenant isolation & tamper-evident history.** Every company gets its own isolated D1 SQLite database. Every mutation — from UI, API, MCP, Batzi, quick sentence, email, or import — is sealed into a SHA-256 hash-chained audit log in the same transaction, with readable before/after diffs, provenance tracking, safe undo, and 10-year retention locks (Art. 958f CO).
+6. **Open and easy to switch into (or out of).** Self-hostable under AGPL-3.0, with a full REST API, MCP server, XLSX exports everywhere, a one-click migration importer, and a 310-operation compatibility API so existing Swiss accounting integrations keep working.
+
+---
+
+## Key features
 
 | Area | What you get |
 | --- | --- |
-| **Batzi, the agent** | Chat panel everywhere (⌘J) and a console on the Today page. Uses the same toolkit as MCP: create/issue invoices, record bills and receipts (with the original attached), import lists, change company details, VAT rules, document texts, number formats, the logo, invite people. Destructive steps wait for a confirm button. Claude Opus 5.5 with adaptive thinking, streaming progress updates and server-side refusal fallback |
-| **Drop anything** | Drag or paste files anywhere: camt statements and clean CSV/XLSX tables (contacts, products, opening balances, bank lines) are imported on the spot; PDFs, photos and screenshots go to Batzi |
-| **Inbound email** | Every company gets a private address `<slug>.<token>@<EMAIL_DOMAIN>` (Cloudflare Email Routing → the Worker's `email()`). Suppliers can send bills straight in; mail from authenticated team members may contain instructions; strangers can only add bills/receipts for review |
-| **Quick sentences** | “invoice Muster AG 3h consulting at 180”, “paid 42.50 for SBB tickets yesterday”, “2h30 on Website relaunch”, “Anna paid” — parsed deterministically in EN/DE/FR/IT with a live preview, no AI needed |
-| **Today** | “Needs you” cards with one-click answers (bank matches, late invoices, bills due, unbilled time, VAT deadline, payroll, missing setup), money weather (8-week cash forecast), the numbers that matter |
-| **A4 document editor** | Quotes, orders, invoices, credit notes, delivery notes and purchase orders are edited on a sheet that mirrors the PDF millimetre for millimetre (letterhead, window address, table, totals, real QR-bill); fields appear on hover |
-| **Languages & jargon** | UI in English, Deutsch, Français and Italiano (gettext-style catalog with a coverage test); accounting terms carry plain-words tooltips in all four languages; “accountant goggles” switch between simple and classic terminology |
-| **Contacts** | Companies and persons, relations, additional addresses, groups, sectors, notes, UID (CHE) validation, archive/restore |
-| **Sales** | Quotes, sales orders (with recurring billing), delivery notes, invoices, credit notes; item/free/text/subtotal/discount/page-break positions, optional positions, VAT incl./excl./none, 5-Rappen rounding, conversions between documents, duplication |
-| **Invoicing** | Swiss QR-bill (QR-IBAN + QRR, or IBAN + SCOR creditor reference), multilingual PDFs (DE/FR/IT/EN by customer language), payments incl. cash discount (Skonto), partial payments, three-level dunning with fees, bad-debt write-off with VAT correction |
-| **Purchasing** | Supplier bills with input VAT per line, purchase orders with goods receipt, expenses (cash/card/private), payment scheduling |
-| **Accounting** | Swiss SME chart of accounts (KMU) in 4 languages, automatic bookings for every workflow with exact VAT, manual and compound entries with automatic VAT split, reversals, journal, account ledgers, trial balance, staged income statement (gross profit I/II, EBITDA, EBIT, EBT), balance sheet, business-year closing and period locks |
-| **VAT** | 8.1 % / 2.6 % / 3.8 %, exports and exempt supplies, input tax (material vs. investments), VAT return figures by ESTV form digit, settlement booking, VAT periods |
-| **Banking** | Bank accounts with IBAN/QR-IBAN, ISO 20022 **camt.052/053/054** and CSV import with de-duplication, auto-matching by QR reference / invoice number / amount, one-click booking; **pain.001.001.09** (Swiss Payment Standards) export |
-| **Projects** | Projects with budgets (hours/amount), milestones, work packages, activities with rates, time tracking, tasks, budget burn, one-click invoicing of unbilled time |
-| **Payroll** | Employees, absences, monthly payroll runs: AHV/IV/EO, ALV with ceiling, BVG, NBU, KTG, withholding tax, family allowances, employer costs, booked to the ledger, payslip PDFs, annual salary summary |
-| **Inventory** | Products and services, units, stock locations/areas, stock movements from deliveries and goods receipts |
-| **Reports** | Dashboard KPIs and 12-month trend, open receivables/payables with ageing, liquidity forecast, all statements as **PDF and XLSX** |
-| **Platform** | Multi-company (fiduciary-friendly) with roles (owner, admin, accountant, member, viewer), invitations, API keys (read-only or read/write, capped to the creator's role), **hash-chained tamper-evident audit log** for every change from UI, API and MCP, file attachments in R2 |
-| **Instant & offline** | Page switches in 10–30 ms: links are prefetched the moment the pointer rests on them, lists render from a local copy, so search, filters and sorting never wait for the network, and the keyboard reaches everything (`g i`, `j`/`k`, `↵`, `/`, `c`, `u`, `?`). Lists and every page already visited keep working offline |
-| **Compatibility API** | The REST API Swiss accounting integrations already call (2.0, 3.0 and 4.0 paths, same JSON, same errors), served from Batzio's data at `/api/compat`: point an existing integration at it with a Batzio API key and it keeps working. All 310 documented operations, tested against the published specification |
-| **Move in** | *Settings → Move in*: paste an access token from the software you are leaving and click once. Contacts, products, projects and time, quotes, orders and invoices with their payments, supplier bills, expenses and manual bookings arrive with their numbers and states; re-running only adds what is new |
-| **On this device** | The iPhone, iPad, Mac, Vision Pro, Android and Windows apps also work with no server and no account: *On this device* runs the same engine on SQLite files in the app's own storage, fully offline (Batzi, which needs Claude, is off there) |
-| **History & undo** | Every change is recorded with who made it (a person or software), from where (web, app, API key, MCP client, Batzi conversation and tool, quick sentence, email, import), the device and IP address, and a readable before → after of every field and position. The newest change of a record can be undone; booked, issued or paid records are never rewritten |
-| **Duplicates** | The same receipt dropped or emailed twice is recognised by its fingerprint and never booked twice; supplier bills, expenses and contacts that look like an earlier one are flagged on Today to merge, remove or keep. Writes sent with an `Idempotency-Key` are answered once, and the apps retry dropped writes safely |
-| **Integrations** | REST API for every resource, workflow action and report; generated **OpenAPI 3.1** with interactive reference at `/docs/api`; **MCP** server at `/api/mcp`; XLSX export of every list |
+| **Batzi, the AI bookkeeper** | Chat panel everywhere (`⌘J`) and console on the Today page. Shares the MCP toolkit: create/issue invoices, book bills and receipts (with original attachments), import lists, update company/VAT/document settings, logo, and team invites. Destructive steps wait for a confirm button |
+| **Drop anything & inbound email** | Drag or paste files anywhere, or forward bills to `<slug>.<token>@<EMAIL_DOMAIN>`: `camt` statements and CSV/XLSX tables import on the spot; PDFs, photos, and screenshots go to Batzi. Outside senders can only submit bills/receipts for review |
+| **Quick sentences** | *"invoice Muster AG 3h consulting at 180"*, *"paid 42.50 for SBB tickets yesterday"*, *"2h30 on Website relaunch"*, *"Anna paid"* — parsed deterministically in EN/DE/FR/IT with a live preview, no AI required |
+| **Today & A4 editor** | *"Needs you"* action cards, 8-week cash forecast (*Money weather*), and a live A4 document editor mirroring the PDF millimetre for millimetre (letterhead, window address, positions, totals, Swiss QR-bill) |
+| **Languages & jargon** | Full UI and plain-language accounting tooltips in English, Deutsch, Français, and Italiano; *"Accountant goggles"* toggle between simple and classic terms |
+| **Contacts, sales & invoicing** | Companies/persons with Swiss UID validation; quotes, orders (recurring billing), delivery notes, invoices, credit notes; Swiss QR-bill (QR-IBAN + QRR / IBAN + SCOR), multilingual PDFs, 5-Rappen rounding, Skonto, partial payments, 3-level dunning, bad-debt write-off |
+| **Purchasing, accounting & VAT** | Supplier bills, purchase orders, expenses; Swiss KMU chart of accounts in 4 languages, automatic & compound entries, reversals, journal, ledgers, trial balance, staged income statement (gross profit I/II, EBITDA, EBIT, EBT), balance sheet, year-end closing, period locks, ESTV VAT return |
+| **Banking, projects & payroll** | ISO 20022 `camt.052/053/054` & CSV import with auto-matching, `pain.001.001.09` export; projects, budgets, time tracking, one-click invoicing, inventory/stock; Swiss payroll (AHV/IV/EO, ALV, BVG, NBU, KTG, withholding tax, payslip PDFs, annual summary) |
+| **Platform, offline & audit** | Multi-company roles, scoped API keys, SHA-256 hash-chained audit log with readable diffs, provenance & undo, duplicate detection, `Idempotency-Key` support, 10–30 ms local-first web lists, and full **on-device offline mode** on Apple, Android & Windows |
+| **Integrations & migration** | REST API, generated **OpenAPI 3.1** (`/docs/api`), **MCP** server (`/api/mcp`), **Compatibility API** (`/api/compat`, 310 documented 2.0/3.0/4.0 operations), XLSX exports, and one-click *Settings → Move in* importer |
 
-## Apps
+### How intake & automation work
 
-| App | Where | Built with | What it covers |
-| --- | --- | --- | --- |
-| **Web** | `apps/web` | vinext (Next.js App Router) on a Cloudflare Worker | Every screen, the A4 document editor, the REST API, MCP, Batzi and inbound email |
-| **API** | `apps/api` | Headless Cloudflare Worker | The same `/api/v1`, `/api/mcp`, `/api/agent`, `/api/drop` and `email()` without the UI, for the native apps and integrations |
-| **Apple** | `apps/apple` | SwiftUI, one universal target (iOS, iPadOS, macOS, visionOS) + the `BatzioKit` Swift package | Today, quick sentences, Batzi (inspector on iPad/Mac, its own window on Vision Pro), every module's lists, records, workflow actions and forms with positions and live totals, PDFs, all reports with PDF/Excel, bank import, payroll run, settings, team, API keys; drop files on the window, open/share files to Batzio, scan paper with the camera |
-| **Android** | `apps/android` | Kotlin, Jetpack Compose, Navigation 3, Material 3 | The same screens; share sheet target, camera, PDF viewer; drawer on phones, permanent pane on tablets |
-| **Windows** | `apps/windows` | WinUI 3 (Windows App SDK) + the cross-platform `Batzio.Core` library | The same screens; drag & drop onto the window, share target and file associations, PDF rendering, Credential Locker |
+```mermaid
+flowchart LR
+  subgraph Inputs["Ways to get work in"]
+    Drop["Drop / paste file"]
+    Email["Inbound email"]
+    Quick["Quick sentence"]
+    Chat["Batzi chat / MCP"]
+  end
 
-The native apps are **schema-driven clients**: `GET /api/v1/app/bootstrap` hands them the navigation, every resource definition (fields, actions, child collections), the glossary and the report catalogue — translated, and in plain or accountant wording. Lists, records, forms and reports are rendered from that, so a new field or workflow step on the server shows up in every app without a release. Calculations (document totals, quick sentences, reports) run on the server with the same code as the web and PDFs.
+  subgraph Processing["Deterministic & AI processing"]
+    Parser["Deterministic parsers<br/>(Quick EN/DE/FR/IT · camt · CSV/XLSX)"]
+    Agent["Batzi (Claude)<br/>Shared 38-tool MCP toolkit"]
+    Confirm{"Needs user<br/>confirmation?"}
+  end
 
-### What is shared, and how
+  subgraph Engine["Audited domain engine"]
+    Core["Validation · Accounting · Swiss VAT · QR-bill"]
+    Commit[("D1 Transaction<br/>Data + SHA-256 Audit Log")]
+  end
 
-| Shared piece | Source | Web | Apple | Android | Windows |
-| --- | --- | --- | --- | --- | --- |
-| Swiss logic (VAT, QR-bill, IBAN, payroll, document maths, quick-sentence parser) | `packages/core` | imported | via the API | via the API | via the API |
-| Engine (storage, resources, REST, MCP, agent, reports, admin) | `packages/server` | imported | API | API | API |
-| Translations EN/DE/FR/IT | `packages/i18n` catalog | `t("…")` | `L("…")` ← `strings.json` | `L("…")` ← `assets/strings.json` | `L("…")` ← embedded `strings.json` |
-| Design tokens (colours light/dark, radii, spacing, type scale, neumorphic shadows, metal gradient) | `packages/tokens/tokens.json` | `tokens.css` | `Tokens.swift` | `Tokens.kt` | `Tokens.xaml` (incl. WinUI control colours) |
-| Icons | `packages/tokens/icons.json` | lucide | SF Symbols | Material | Segoe Fluent |
-| Fonts (Bricolage Grotesque, Inter — OFL) | `packages/tokens/fonts` | Google Fonts | bundled | `res/font` | bundled |
-| Brand art (coin, app icons) | `apps/web/public/brand` | as is | asset catalog (+ visionOS layered icon) | adaptive icon, drawables | tiles, splash |
+  Quick --> Parser
+  Drop -->|"camt / CSV / XLSX"| Parser
+  Drop -->|"PDF / photo / screenshot"| Agent
+  Email -->|"DMARC/DKIM verified"| Agent
+  Chat --> Agent
 
-`pnpm gen` regenerates every platform file from those sources (`pnpm brand` re-renders the icons); CI fails when a generated file is stale (`pnpm check:gen`) or a string an app uses is missing a translation. All native strings are keys of the same catalog, so the i18n test covers Swift, Kotlin and C# too.
-
-## Architecture
-
-```
-                         apps/web (vinext Worker)                 apps/api (headless Worker)
- browser ──▶ App Router pages · server actions ─┐       ┌─ /api/v1 · /api/mcp · /api/agent · /api/drop · email()
- iOS · iPadOS · macOS · visionOS ───────────────┼──────▶│      (also mounted by apps/web)
- Android · Windows ─────────────────────────────┘       │
-            ┌───────────────────────────────────────────┴─────────────────────────────────┐
-            │ packages/server: domain services (sales, purchases, accounting, banking,    │
-            │ payroll, projects) on the generic CRUD engine · resources · agent · reports │
-            │ packages/core: pure Swiss logic   ·   packages/i18n: catalog & glossary     │
-            └──────────┬───────────────────────────────┬──────────────────────┬───────────┘
-                       │                               │                      │
-              D1 "DB" (control plane)       D1 TENANT_DB_001…N (one per company)   R2 FILES
-              tenants · users · sessions    contacts · documents · ledger · audit…
-              memberships · api_keys
+  Parser --> Core
+  Agent --> Confirm
+  Confirm -->|"Safe action"| Core
+  Confirm -->|"Destructive / sensitive<br/>(explicit user approval)"| Core
+  Core --> Commit
 ```
 
-### One database per company
+---
 
-* `packages/server/src/config/tenant-databases.ts` declares a **pool of D1 slots** (`TENANT_DB_001…`). each app's `cloudflare.config.ts` turns them into bindings (web and API bind the same databases); `cf` provisions missing databases on deploy and Miniflare simulates them locally.
-* Creating a company claims the next free, empty slot, runs the tenant migrations and seeds the chart of accounts, VAT codes and master data (`packages/server/src/tenants.ts`). The runtime discovers slots from the bindings themselves.
-* Grow the pool before it runs out with `pnpm db:slots add 20` and deploy.
-* When no slot is free and `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_D1_TOKEN` are set, a database is created through the D1 REST API and accessed over HTTP (`packages/server/src/db/d1-http.ts`) until it is moved to a binding.
-* Migrations are applied lazily and transactionally per database (`packages/server/src/db/migrate.ts`).
+## Running locally
 
-### One definition per entity
+### Prerequisites
 
-Each entity is described once in `packages/server/src/resources/defs/*` (fields, nested collections, workflow actions, hooks, permissions). That definition drives:
+* **Node.js 24+**
+* **pnpm 12+** (`corepack enable` or `npm i -g pnpm`)
+* Optional for native apps:
+  * **Apple**: Xcode 26+ and [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`)
+  * **Android**: JDK 21 and Android SDK (or Android Studio)
+  * **Windows**: Windows 10 1809+ with .NET 10 SDK (or Visual Studio 2026 with WinUI workload); `Batzio.Core.Tests` runs on any OS with .NET 10
 
-* validation (`zod`), persistence and child collections (`packages/server/src/crud.ts`), with the audit entry written **in the same D1 transaction** as the change;
-* the REST endpoints (`packages/server/src/api/router.ts`) and the OpenAPI document (`packages/server/src/api/openapi.ts`);
-* the MCP tools (`packages/server/src/mcp/server.ts`);
-* the generic list, detail and form screens on the web **and in every native app** (via `/api/v1/app/bootstrap`), and the XLSX export.
-
-### Conventions
-
-* Money is stored as integer minor units (Rappen); the API and forms use decimal major units. Report endpoints convert to major units as well.
-* Document calculations are pure and shared by server, browser and PDF (`packages/core/src/calc/documents.ts`); the apps get live totals from `POST /api/v1/app/documents/totals`, which runs the same function.
-* The audit log is sealed as a SHA-256 hash chain; `GET /api/v1/audit/verify` (or *Audit log → Verify integrity*) recomputes it.
-
-### Instant navigation and offline
-
-* **Local-first lists.** `apps/web/lib/local/store.ts` keeps one TanStack DB collection per company and module, filled from `GET /api/v1/app/records/<resource>?shape=db` (up to 2,000 rows) by TanStack Query and persisted to IndexedDB. `components/resource/local-list.tsx` renders lists with live queries, revalidates on each visit and after each router refresh, and asks the server for nothing on client navigations. Archived views (and `?server=1`) use the server-rendered list; above 2,000 rows the list shows the latest ones and says so.
-* **Warm before the click.** `components/local/keyboard.tsx` prefetches the full page payload on hover, focus or pointer-down and loads the list into the local store. The main lists sync in idle time after the first page load. The client router keeps pages for 30 s (`experimental.staleTimes`).
-* **Small navigation payloads.** The Worker entry marks RSC requests (`x-batzio-navigation`), so the root layout sends the translation catalog only with the first document. After that, a navigation payload is about 20–40 KB instead of about 130 KB.
-* **Offline.** `public/sw.js` serves hashed build assets cache-first, and the catalog, fonts and brand art stale-while-revalidate. Pages go network-first (3 s), falling back to the last copy, then `public/offline.html`. The API and RSC requests go straight to the network. The sign-in page clears the local store and the cached pages (`components/local/forget-local-data.tsx`).
-* **Keyboard.** Press `?` anywhere for the shortcut list. `g` + letter goes to a module; on lists, `j`/`k` move, `↵` opens, `/` searches, `c` creates and `u` goes back to the list.
-
-### On this device (no server)
-
-* **One engine, everywhere.** `packages/local` bundles the engine (`api/router`, Batzi's drop pipeline, PDFs, QR-bills, reports) into one script, `bundle/batzio-local.js`, generated by `pnpm gen` and checked by `pnpm check:gen`. Missing web APIs (URL, Request/Response, FormData, TextEncoder, crypto) are filled in for engines that lack them.
-* **Hosts.** Each app runs the script and lends it SQLite and a folder through a small synchronous bridge (`packages/local/src/host-api.ts`): JavaScriptCore + the SQLite C API on Apple (`BatzioKit/Local`), a hidden WebView + bundled SQLite (`androidx.sqlite`) on Android (`core/LocalEngine.kt`), V8 (ClearScript) + SQLitePCLRaw on Windows (`Batzio.Core/Local`). `control.sqlite` holds the account, `tenant-NNN.sqlite` each company, `files/` the attachments.
-* **Same API.** The apps talk to it exactly as to a server, at `https://device.batzio.local`: requests never reach the network. The on-device account has a generated password kept in the keychain or app storage; *Settings* shows the folder and can delete everything.
-
-### History, undo and duplicates
-
-* **Provenance.** `withProvenance()` adds where a change came from to the actor (`thread`/`tool` for Batzi, `mcp`/`tool` for MCP, `request` and `idempotency_key` for API calls, `sentence`, `email_from`, `import`). It is stored in `audit_log.context` and, from chain version 2, sealed into the hash chain. IP address and user agent stay outside the chain, so they can be erased without breaking it.
-* **Readable history.** `packages/server/src/history.ts` turns entries into words (field labels, Swiss amounts, option names, referenced records, positions added/removed/changed) for the web, the apps (`GET /api/v1/app/history/{resource}/{id}`) and API clients.
-* **Undo.** `POST /api/v1/audit_log/{id}/undo` puts previous values back, removes what a creation added or brings back what a deletion removed (under its old id). It refuses locked records (booked, issued, paid, closed years), changes that were changed again since, and steps with their own counter-action (credit notes, reversals); the undo is audited and linked to the entry it reverses.
-* **Duplicates.** `packages/server/src/duplicates.ts` flags copies when records are created (and on demand via `POST /api/v1/app/duplicates/scan`); they appear under *Possible duplicates* with merge (contacts), remove the copy and dismiss.
-* **Retention.** Receipts of booked records and attachments of locked ones cannot be deleted (ten years, Art. 958f CO).
-
-## Getting started
+### 1. Install dependencies
 
 ```bash
+git clone https://github.com/raphaelsaunier/batzio.ch.git
+cd batzio.ch
 pnpm install
 ```
+
+### 2. Configure optional environment variables
+
+Batzio works locally out of the box with zero configuration — Miniflare automatically simulates Cloudflare D1 and R2 in `.cloudflare/state`.
+
+To enable **Batzi** (Claude), a one-click local demo login, or inbound email testing, copy the example file:
+
+```bash
+cp apps/web/.env.example apps/web/.dev.vars
+```
+
+* `ANTHROPIC_API_KEY` — enables Batzi (Claude). Without it, quick sentences, CSV/XLSX/`camt` drops, and the entire accounting suite still work; PDFs and images wait in the inbox for manual review.
+* `DEMO_LOGIN_EMAIL` / `DEMO_LOGIN_PASSWORD` — enables the one-click *Open the demo* button on `/login`.
+* `EMAIL_DOMAIN` / `EMAIL_FROM` — optional inbound/outbound email settings.
+* `IMPORT_SOURCE_URL` — optional default source URL for *Settings → Move in*.
+
+### 3. Start the web app
 
 ```bash
 pnpm dev
 ```
 
-Open http://localhost:5173, choose **Start free**, and keep *Fill with demo data* checked to get a company with a year of invoices, bills, bookings, payroll, a bank statement and projects.
+Open [http://localhost:5173](http://localhost:5173), click **Start free**, and keep **Fill with demo data** checked to seed a complete Swiss demo company (a year of invoices, supplier bills, bookings, payroll, bank statements, and projects).
 
-Local data lives in `.cloudflare/state` (Miniflare). Delete that folder to start over. The headless API Worker runs with `pnpm dev:api` on port 8788 with its own local data; during development the native apps talk to the web dev server, which serves the identical `/api`.
+* **Resetting local data:** Stop the server and delete `.cloudflare/state`.
+* **Headless API Worker:** Run `pnpm dev:api` to start `apps/api` on port `8788` (during local development, native apps can also talk directly to `apps/web` on port `5173`, which mounts the same `/api` routes).
 
-### Native apps
+### 4. Run the native apps
 
-The apps sign in with email and password against a Batzio server (default `http://localhost:5173`; tap the address on the sign-in screen to change it). Debug builds also accept a session token on launch for automated screenshots (see `AppModel` in each app).
+Debug builds connect to `http://localhost:5173` by default (`10.0.2.2:5173` on the Android emulator; tap the server address on the sign-in screen to change it), or choose **On this device** to run completely offline with no server.
 
-**Apple** — Xcode 26+ and [XcodeGen](https://github.com/yonaskolb/XcodeGen):
+* **Apple (iOS, iPadOS, macOS):** `pnpm apple` generates `apps/apple/Batzio.xcodeproj` and opens Xcode. Run `swift test` in `apps/apple/BatzioKit` for package tests.
+* **Android:** `pnpm android` installs the debug build on a connected device/emulator (`./gradlew :app:testDebugUnitTest` / `:app:connectedDebugAndroidTest`).
+* **Windows:** Open `apps/windows/Batzio.sln` or run `dotnet build apps/windows/Batzio.App/Batzio.App.csproj -p:Platform=x64` (`dotnet test apps/windows/Batzio.Core.Tests` runs on any OS).
+
+### 5. Run checks and tests
 
 ```bash
-pnpm apple
+pnpm check:gen       # verify generated tokens, translations, and local bundle are up to date
+pnpm typecheck       # TypeScript check across all workspace packages
+pnpm test            # Vitest suite (in-memory SQLite D1 adapter; ~2s)
+pnpm test:coverage   # Vitest with coverage thresholds (used in CI)
+pnpm build           # production build of web and API apps
 ```
 
-That generates `apps/apple/Batzio.xcodeproj` from `project.yml` and opens it; pick an iPhone, iPad, *My Mac* or Apple Vision Pro destination. `swift test` in `apps/apple/BatzioKit` runs the package tests.
+Set `SAMPLES_DIR=/some/dir` when running `pnpm test` to write generated PDFs and XLSX files for inspection.
 
-**Android** — Android Studio or JDK 21 with the Android SDK. The emulator reaches your machine's dev server at `10.0.2.2:5173` (the default in debug builds):
+---
 
-```bash
-pnpm android
+## Architecture
+
+```mermaid
+flowchart TB
+  subgraph Clients["Clients"]
+    Browser["Web Browser<br/>(Local-first TanStack DB + SW)"]
+    Native["Native Apps<br/>Apple (iOS · iPadOS · macOS)<br/>Android · Windows"]
+    External["AI Agents (MCP) &<br/>API / Compat Integrations"]
+  end
+
+  subgraph Edge["Cloudflare Workers"]
+    Web["apps/web<br/>vinext App Router + API + email()"]
+    Api["apps/api<br/>Headless Worker + email()"]
+  end
+
+  subgraph Shared["Shared Monorepo Packages"]
+    Server["packages/server<br/>CRUD · Domain Services · Resources<br/>REST · OpenAPI · MCP · Agent · Reports"]
+    Core["packages/core<br/>Swiss VAT · QR-bill · IBAN<br/>Payroll · Maths · Quick Parser"]
+    I18n["packages/i18n & packages/tokens<br/>EN/DE/FR/IT · Design Tokens · Icons"]
+    Local["packages/local<br/>Bundled On-Device Engine<br/>(JSC · WebView · ClearScript V8)"]
+  end
+
+  subgraph Storage["Cloudflare Storage"]
+    Control[("D1: DB (Control Plane)<br/>tenants · users · sessions · api_keys")]
+    Tenant[("D1: TENANT_DB_001…N<br/>One isolated DB per company")]
+    Files[("R2: FILES<br/>Receipts & PDFs")]
+  end
+
+  Browser --> Web
+  Native -->|"Cloud mode"| Web
+  Native -->|"Cloud mode"| Api
+  Native -.->|"On-device offline mode<br/>(local SQLite files)"| Local
+  External --> Api
+  External --> Web
+
+  Web --> Server
+  Api --> Server
+  Server --> Core
+  Server --> I18n
+  Local --> Server
+
+  Server --> Control
+  Server --> Tenant
+  Server --> Files
 ```
 
-**Windows** — Windows 10 1809+ with the .NET 10 SDK (or Visual Studio 2026 with the WinUI workload). Open `apps/windows/Batzio.sln`, or:
+### One definition per entity
 
-```bash
-dotnet build apps/windows/Batzio.App/Batzio.App.csproj -p:Platform=x64
+Each entity is described once in `packages/server/src/resources/defs/*` (fields, child collections, workflow actions, hooks, permissions) and automatically powers every layer:
+
+```mermaid
+flowchart LR
+  Def["defineResource()<br/>Single Entity Definition"]
+  Def --> CRUD["Zod Validation & CRUD<br/>+ Atomic SHA-256 Audit Entry"]
+  Def --> REST["REST API &<br/>OpenAPI 3.1 Schema"]
+  Def --> MCP["MCP & Batzi<br/>Agent Tools"]
+  Def --> UI["Web & Native Screens<br/>via /api/v1/app/bootstrap"]
+  Def --> Export["XLSX Exports &<br/>Search / Filters"]
 ```
 
-`dotnet test apps/windows/Batzio.Core.Tests` runs the shared library's tests on any OS.
+<details>
+<summary><strong>Apps &amp; shared code matrix</strong> (click to expand)</summary>
 
-### Tests
+<br />
+
+| App | Where | Built with | What it covers |
+| --- | --- | --- | --- |
+| **Web** | `apps/web` | vinext (Next.js App Router) on Cloudflare Workers | Every screen, A4 document editor, REST API, MCP, Batzi, inbound email |
+| **API** | `apps/api` | Headless Cloudflare Worker | `/api/v1`, `/api/mcp`, `/api/agent`, `/api/drop`, `/api/compat`, `email()` without the UI |
+| **Apple** | `apps/apple` | SwiftUI universal target (iOS, iPadOS, macOS) + `BatzioKit` | Full schema-driven UI, Batzi, live totals, PDFs, reports, drag & drop, camera scan, on-device mode |
+| **Android** | `apps/android` | Kotlin, Jetpack Compose, Navigation 3, Material 3 | Same screens, share target, camera, PDF viewer, adaptive tablet layout, on-device mode |
+| **Windows** | `apps/windows` | WinUI 3 (Windows App SDK) + `Batzio.Core` | Same screens, drag & drop, share target, file associations, PDF rendering, Credential Locker, on-device mode |
+
+| Shared piece | Source | Web | Apple | Android | Windows |
+| --- | --- | --- | --- | --- | --- |
+| Swiss logic (VAT, QR-bill, IBAN, payroll, maths, quick parser) | `packages/core` | imported | API / local bundle | API / local bundle | API / local bundle |
+| Engine (storage, resources, REST, MCP, agent, reports) | `packages/server` | imported | API / local bundle | API / local bundle | API / local bundle |
+| Translations EN/DE/FR/IT | `packages/i18n` | `t("…")` | `L("…")` ← `strings.json` | `L("…")` ← `assets/strings.json` | `L("…")` ← embedded `strings.json` |
+| Design tokens (light/dark, radii, spacing, type, shadows) | `packages/tokens/tokens.json` | `tokens.css` | `Tokens.swift` | `Tokens.kt` | `Tokens.xaml` |
+| Icons | `packages/tokens/icons.json` | lucide | SF Symbols | Material | Segoe Fluent |
+| Fonts (Bricolage Grotesque, Inter — OFL) | `packages/tokens/fonts` | Google Fonts | bundled | `res/font` | bundled |
+| Brand art (coin, app icons) | `apps/web/public/brand` | as is | asset catalog | adaptive icon, drawables | tiles, splash |
+
+`pnpm gen` regenerates every platform file and the on-device bundle (`pnpm brand` re-renders icons); CI enforces `pnpm check:gen` and full translation coverage across TypeScript, Swift, Kotlin, and C#.
+
+</details>
+
+<details>
+<summary><strong>Implementation internals</strong> (tenant DB pool, local-first web, on-device SQLite, provenance &amp; undo)</summary>
+
+<br />
+
+* **One database per company:** `packages/server/src/config/tenant-databases.ts` declares a pool of D1 slots (`TENANT_DB_001…`). Creating a company claims the next free slot, runs lazy transactional migrations (`packages/server/src/db/migrate.ts`), and seeds the KMU chart of accounts and master data. Grow the pool with `pnpm db:slots add 20`. If exhausted and `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_D1_TOKEN` are set, Batzio creates and queries databases via the D1 HTTP API (`packages/server/src/db/d1-http.ts`).
+* **Conventions:** Money is stored as integer minor units (Rappen); APIs and forms use decimal major units. Pure document calculations (`packages/core/src/calc/documents.ts`) are shared across server, browser, PDF, and native live totals (`POST /api/v1/app/documents/totals`).
+* **Local-first web & offline:** `apps/web/lib/local/store.ts` keeps one TanStack DB collection per company/module (up to 2,000 rows persisted in IndexedDB). Hover/focus prefetching (`components/local/keyboard.tsx`) and stripped RSC payloads (`x-batzio-navigation`, ~20–40 KB) keep transitions around 10–30 ms. `public/sw.js` caches assets cache-first and pages network-first (3 s timeout). Press `?` anywhere for keyboard shortcuts.
+* **On-device engine (no server):** `packages/local` bundles the engine into `packages/local/bundle/batzio-local.js`. Each native host bridges SQLite + file storage synchronously (`packages/local/src/host-api.ts`): JavaScriptCore + SQLite C API on Apple, hidden WebView + `androidx.sqlite` on Android, and ClearScript V8 + SQLitePCLRaw on Windows. Apps talk to it at `https://device.batzio.local` with zero network traffic.
+* **History, undo & retention:** `withProvenance()` seals origin metadata (`thread`/`tool`, `mcp`, `request`, `idempotency_key`, `sentence`, `email_from`, `import`) into the SHA-256 hash chain (`GET /api/v1/audit/verify`). IP/user-agent stay outside the chain for erasability. `POST /api/v1/audit_log/{id}/undo` reverts unlocked records while refusing booked, issued, paid, or closed-year entries. Receipts of booked records cannot be deleted (10-year retention, Art. 958f CO).
+
+</details>
+
+---
+
+## API & MCP
+
+Create an API key under **Settings → API & MCP**:
 
 ```bash
-pnpm test            # or pnpm test:coverage (CI), which fails below the coverage thresholds in vitest.config.ts
-```
-
-The suite runs the domain layer against an in-memory SQLite D1 adapter: schema/definition consistency, Swiss identifiers and QR-bill payloads, VAT and payroll calculations against worked examples (`compliance.test.ts`: credit-note VAT, 5-Rappen rounding, BVG coordinated salary, withholding tax, locked bookings, closed years, retention), the complete demo company (ledger balanced, VAT exact, bank matching, payments, pain.001, year-end closing), audit-chain tamper detection, history and undo, duplicates, the whole HTTP surface in-process (sessions, API key scopes, `Idempotency-Key`, MCP), PDF/XLSX rendering and the OpenAPI document. `packages/local` runs the bundled on-device engine both in a bare V8 context (like JavaScriptCore) and with a full web platform (like a WebView). Set `SAMPLES_DIR=/some/dir` to write the generated PDFs and XLSX files for inspection.
-
-```bash
-pnpm typecheck
-```
-
-The native apps have their own unit tests (`swift test`, `./gradlew testDebugUnitTest`, `dotnet test`), each running the on-device engine end to end; on Android that test needs a device or emulator (`./gradlew connectedDebugAndroidTest`). `.github/workflows/ci.yml` runs all of them and builds every app, including the iOS, macOS and visionOS variants and the WinUI app on Windows.
-
-## Deploying
-
-```bash
-npx cf auth login
-```
-
-```bash
-pnpm deploy
-```
-
-This deploys the web app and the headless API Worker. Set `accountId` in `apps/web/cloudflare.config.ts` and `apps/api/cloudflare.config.ts` (or `CLOUDFLARE_ACCOUNT_ID`). The control database, the R2 bucket and all tenant database slots are created on first deploy. Optional secrets: `CLOUDFLARE_D1_TOKEN` (HTTP fallback for tenant databases), `APP_URL`.
-
-* **Domains.** Production is served on `www.batzio.ch` (a custom domain of the `batzio` Worker) and on `batzio.<subdomain>.workers.dev`. The apex `batzio.ch` answers through a proxied placeholder record (`AAAA 100::`) and a zone Redirect Rule that sends it to `https://www.batzio.ch` with a 301, keeping the path and query. The API Worker stays on `batzio-api.<subdomain>.workers.dev`.
-* **Demo login.** `DEMO_LOGIN_EMAIL` and `DEMO_LOGIN_PASSWORD` are secrets (locally from `apps/web/.dev.vars`). Upload them with the version: `npx cf deploy --prebuilt --secrets-file <file>` (JSON or .env). The first click on *Open the demo* creates the demo company, which takes about half a minute.
-* **Previews.** `pnpm deploy:preview <name>` builds with `isPreview` and deploys a Preview named after the branch (the name is required outside git). Each Preview gets `<name>.batzio.ch` and `<name>-batzio.<subdomain>.workers.dev`. Previews bind their own databases and bucket (`batzio-preview-control`, `batzio-preview-tenant-00x`, `batzio-preview-files`) and never see production data. Preview deploys do not create databases or look them up by name, so the preview database ids are pinned in `apps/web/cloudflare.config.ts`. Secrets are not copied from production: for the demo card on Previews, add both demo secrets once under *Workers → batzio → Settings → Previews Base* (they apply to Previews created afterwards), or for an existing Preview with `npx wrangler preview secret put DEMO_LOGIN_EMAIL --name <name>`.
-
-### Batzi and inbound email
-
-* `ANTHROPIC_API_KEY` (secret) turns on Batzi. Without it, quick sentences, drops of statements/spreadsheets and everything else still work; PDFs and images wait in the inbox for a human.
-* `EMAIL_DOMAIN` (e.g. `in.example.ch`): enable Cloudflare Email Routing for that domain and add a catch-all rule that sends mail to the `batzio` Worker. The Worker entries (`apps/web/worker/index.ts`, `apps/api/src/index.ts`) wrap the vinext fetch handler and adds `email()`. Each company's address is shown on Today and under Settings (with a button to issue a new one).
-* Sender trust: instructions in an email are only followed when the sender is a member of the company *and* the message passed DMARC (or DKIM + SPF). Everyone else can only get bills and receipts recorded.
-* Sending documents (`…/send` in the compatibility API): add a Cloudflare Email Service `send_email` binding named `EMAIL` to the Worker and set `EMAIL_FROM` to an address on a domain onboarded to Email Sending. Without them those calls answer 409 with an explanation.
-
-### Moving in
-
-`IMPORT_SOURCE_URL` pre-fills the API address on *Settings → Move in* (the origin that serves `/2.0`, `/3.0` and `/4.0`). The importer (`packages/server/src/importer.ts`) runs in steps of about eight seconds that the page repeats, keeps a source-id → Batzio-id map in `import_map` (so it never duplicates), and continues Batzio's number sequences after the highest imported number. The token is never stored. To try it locally, import one Batzio company into another: `http://127.0.0.1:5173/api/compat` with a read-only API key of the source company.
-
-## API
-
-Create a key under **Settings → API & MCP**, then:
-
-```bash
+# REST API
 curl https://<your-domain>/api/v1/invoices?status=open -H "Authorization: Bearer bz_…"
-```
 
-* Interactive reference: `/docs/api` — OpenAPI 3.1 JSON: `/api/v1/openapi.json`
-* Lists: `q`, `sort`, `dir`, `limit`, `offset`, field equality filters (`status=open`), ranges (`date_gte=2026-01-01`), `format=xlsx`
-* Workflows: `POST /api/v1/invoices/{id}/issue`, `/record_payment`, `/create_reminder`, `POST /api/v1/bills/{id}/book`, …
-* Reports: `/api/v1/reports/{balance-sheet|income-statement|trial-balance|vat|ledger|open-items|dashboard}` with `format=pdf|xlsx`
-* PDFs: `GET /api/v1/{invoices|quotes|orders|deliveries|credit_notes|purchase_orders|reminders|payslips}/{id}/pdf`
-* Retry-safe writes: send `Idempotency-Key: <uuid>` with any `POST`/`PATCH`/`PUT`/`DELETE`; a repeat within 24 hours gets the first answer back (`Idempotent-Replayed: true`) instead of acting twice
-* History: `GET /api/v1/app/history/{resource}/{id}`, `GET /api/v1/app/audit/{id}`; undo: `POST /api/v1/audit_log/{id}/undo`
-
-## Compatibility API
-
-Existing integrations change two settings: the base URL becomes `https://<your-domain>/api/compat` (the headless API Worker also answers at its root, e.g. `https://api.<your-domain>/2.0/contact`) and the token becomes a Batzio API key, which is bound to one company. Everything lives in `packages/server/src/compat/`:
-
-* `wire.ts` — conventions: decimal strings, `order_by=name_1_desc`, `[{field, value, criteria}]` searches, `{error_code, message}` errors, page envelopes, and stable UUIDs for the 4.0 endpoints (they carry the integer id, so no extra column).
-* `table.ts` — one mapping per wire resource; reads are scoped queries, writes go through the Batzio resource, so validation, numbering, bookings and the audit trail behave exactly as in the app. Wire fields Batzio has no column for (fax, Skype name, …) are kept in `compat_extras` and returned unchanged.
-* `v2-*.ts`, `v3.ts`, `v4.ts` — contacts and lists, items, sales documents with positions/comments/payments/reminders/PDFs/conversions/recurrence, projects and time, accounting, banking, currencies, taxes, users, files, purchase orders, bills, outgoing payments, expenses and payroll.
-
-`packages/server/tests/compat.test.ts` covers the main flows. With the published specification saved as `tmp/compat-openapi.json` (git-ignored), its conformance suite also calls every documented operation against demo data (`tests/compat-sweep.ts`) and validates each status code and body against the specification; the few places where the specification contradicts the live behaviour are listed in `SPEC_ERRATA` with a reason.
-
-## Agent & inbox API
-
-* `POST /api/v1/agent` `{ "message": "…", "thread_id"?, "file_ids"? }` — ask Batzi; pending confirmations come back in `pending` and are answered with `{ "confirm": { "tool_use_id", "approve" } }`
-* `POST /api/v1/inbox/files` (multipart `files`) — drop files into the inbox
-* `POST /api/v1/inbox/email` (`message/rfc822`) — deliver a raw email
-* `GET /api/v1/inbox?status=needs_you` — what is waiting
-* In the app: `POST /api/agent` streams NDJSON events (text, progress updates, tool outcomes); `POST /api/drop` handles drag & drop
-
-## App API
-
-What Batzio's own apps use (all documented in the OpenAPI under *Account* and *App*):
-
-* `POST /api/v1/auth/login`, `/auth/signup`, `/auth/logout`, `GET|PATCH /auth/me`, `POST /auth/companies` — sessions for apps. The returned token is sent as `Authorization: Bearer …` together with `X-Tenant: <company slug>`.
-* `GET /api/v1/app/bootstrap?mode=simple|accountant` — navigation, every resource definition, glossary, report catalogue, quick-sentence examples, inbox address, permissions.
-* `GET /app/today` · `POST /app/quick/plan` · `POST /app/quick/run` · `GET /app/threads[/{id}]` · `PATCH /app/inbox/{id}`
-* `GET /app/records/{resource}[/{id}|/new]` — lists with reference labels and column totals; a record with labels, available actions, lock reason, related records, attachments and history; starting values for a new one.
-* `GET /app/options/{resource}` · `GET /app/items/{id}/defaults` · `GET /app/contacts/{id}/snapshot` · `POST /app/documents/totals` · `GET /app/search`
-* `GET /app/reports/{id}` — any report as display-ready tables (`format=xlsx` for Excel).
-* `GET /app/settings`, `PATCH /app/settings/{group}`, `PATCH /app/numbering/{key}`, `GET|POST /app/team`, `PATCH|DELETE /app/team/{user}`, `GET|POST /app/api-keys`, `DELETE /app/api-keys/{id}`, `POST /app/inbox-address`
-
-Texts in responses (labels, messages, errors) follow `?locale=` or `Accept-Language`.
-
-## MCP
-
-```bash
+# MCP (Claude Code, Claude Desktop, or any Streamable HTTP MCP client)
 claude mcp add --transport http batzio https://<your-domain>/api/mcp --header "Authorization: Bearer bz_…"
 ```
 
-The MCP server and Batzi share one toolkit (`packages/server/src/agent/toolkit.ts`): `list_resource_types`, `search_records`, `get_record`, `create_record`, `update_record`, `delete_record`, `run_record_action`, `create_invoice`, `create_bill`, `create_expense`, `create_journal_entry`, `log_time`, `import_rows`, `import_spreadsheet`, `import_bank_file`, `attach_file`, `get_settings`, `update_company_settings`, `update_accounting_settings`, `update_document_texts`, `set_company_logo`, `list_number_formats`, `set_number_format`, `invite_member`, the financial reports, `import_bank_statement`, `export_payment_file`, `run_payroll`, `run_recurring_billing`, `remind_overdue_invoices` and `verify_audit_log`. Every call is permission-checked and audited with its source (`MCP`, `agent`, `email`).
+* Interactive OpenAPI 3.1 docs: `/docs/api` · JSON spec: `/api/v1/openapi.json`
+* Compatibility API (310 documented 2.0 / 3.0 / 4.0 endpoints): `https://<your-domain>/api/compat`
 
-## Project layout
+<details>
+<summary><strong>Full list of MCP &amp; Batzi tools (38 tools)</strong></summary>
+
+<br />
+
+The MCP server and Batzi share the exact same permission-checked, audited toolkit (`packages/server/src/agent/toolkit.ts` and `packages/server/src/api/operations.ts`):
+
+| Category | Tool | Description |
+| --- | --- | --- |
+| **Records & schemas** | `list_resource_types` | Lists all record types, fields, nested collections, and workflow actions |
+| | `search_records` | Search/filter records across any resource |
+| | `get_record` | Fetch a single record with nested positions/lines |
+| | `create_record` | Create a record in any resource |
+| | `update_record` | Update fields and nested collections of a record |
+| | `delete_record` | Delete or archive a record *(requires confirmation)* |
+| | `run_record_action` | Run a workflow step (issue, book, pay, cancel, etc.) |
+| **Bookkeeping shortcuts** | `create_invoice` | Create (and optionally issue) a customer invoice |
+| | `create_bill` | Record a supplier bill with lines, IBAN, QR ref, and attachment |
+| | `create_expense` | Record a receipt / expense with attachment |
+| | `create_journal_entry` | Create a manual or compound double-entry booking |
+| | `log_time` | Log time on a project (by ID or name) |
+| **Files & imports** | `attach_file` | Attach an uploaded file to any record |
+| | `import_rows` | Bulk import structured rows (contacts, items, balances) |
+| | `import_spreadsheet` | Preview or import a CSV/XLSX spreadsheet file |
+| | `import_bank_file` | Import an uploaded `camt.053/054` XML or CSV statement |
+| | `import_bank_statement` | Import raw bank statement content and auto-match payments |
+| | `export_payment_file` | Generate an ISO 20022 `pain.001` payment file |
+| **Reports** | `get_dashboard` | YTD revenue, expenses, profit, cash, open items, VAT, 12-month trend |
+| | `get_balance_sheet` | Balance sheet as of a date |
+| | `get_income_statement` | Staged income statement (gross profit, EBITDA, EBIT, net result) |
+| | `get_trial_balance` | Trial balance per account for a period |
+| | `get_account_ledger` | Postings and running balance for one ledger account |
+| | `get_vat_report` | Swiss ESTV VAT return figures by form digit and code |
+| | `get_open_items` | Open receivables or payables with ageing buckets |
+| **Batch workflows** | `run_payroll` | Create monthly draft payslips for active employees |
+| | `run_recurring_billing` | Generate due invoices from recurring sales orders |
+| | `remind_overdue_invoices` | Create next dunning level for overdue invoices |
+| **Settings & admin** | `whoami` | Current company, user, role, and API key scope |
+| | `get_settings` | Read company, accounting, or document text settings |
+| | `update_company_settings` | Update company details, address, VAT number, accent colour |
+| | `update_accounting_settings` | Update VAT rules, period, rounding, terms, reminder fees *(confirms VAT method changes)* |
+| | `update_document_texts` | Update intro/closing texts for documents and reminders |
+| | `set_company_logo` | Set company letterhead logo from an uploaded image |
+| | `list_number_formats` | Inspect document numbering sequences |
+| | `set_number_format` | Change a document numbering pattern |
+| | `invite_member` | Invite a team member with a role *(requires confirmation)* |
+| | `verify_audit_log` | Recompute and verify the SHA-256 audit hash chain |
+
+</details>
+
+<details>
+<summary><strong>REST, Compatibility, Agent, Inbox &amp; App API details</strong></summary>
+
+<br />
+
+* **REST API (`/api/v1`):**
+  * Lists support `q`, `sort`, `dir`, `limit`, `offset`, equality filters (`status=open`), ranges (`date_gte=2026-01-01`), and `format=xlsx`.
+  * Workflows: `POST /api/v1/invoices/{id}/issue`, `/record_payment`, `/create_reminder`, `POST /api/v1/bills/{id}/book`, …
+  * Reports: `/api/v1/reports/{balance-sheet|income-statement|trial-balance|vat|ledger|open-items|dashboard}` with `format=pdf|xlsx`.
+  * PDFs: `GET /api/v1/{invoices|quotes|orders|deliveries|credit_notes|purchase_orders|reminders|payslips}/{id}/pdf`.
+  * Retry-safe writes: pass `Idempotency-Key: <uuid>` on any `POST`/`PATCH`/`PUT`/`DELETE` (24-hour replay window with `Idempotent-Replayed: true`).
+  * History & undo: `GET /api/v1/app/history/{resource}/{id}`, `GET /api/v1/app/audit/{id}`, `POST /api/v1/audit_log/{id}/undo`.
+* **Compatibility API (`/api/compat`):**
+  * Implemented in `packages/server/src/compat/` (`wire.ts`, `table.ts`, `v2-*.ts`, `v3.ts`, `v4.ts`) covering contacts, items, sales documents, projects/time, accounting, banking, currencies, taxes, users, files, purchase orders, bills, outgoing payments, expenses, and payroll.
+  * Unmapped wire fields (e.g. fax) are preserved round-trip in `compat_extras`.
+  * Save a spec locally as `tmp/compat-openapi.json` (git-ignored) to run the full 310-operation conformance sweep in `packages/server/tests/compat-sweep.ts`.
+* **Agent & Inbox API:**
+  * `POST /api/v1/agent` (`{ message, thread_id?, file_ids?, confirm? }`), `POST /api/v1/inbox/files`, `POST /api/v1/inbox/email` (`message/rfc822`), `GET /api/v1/inbox?status=needs_you`.
+  * Web app streams NDJSON at `POST /api/agent` and handles drops at `POST /api/drop`.
+* **App API (used by native apps):**
+  * `/api/v1/auth/{login|signup|logout|me|companies}`, `/api/v1/app/bootstrap?mode=simple|accountant`, `/app/today`, `/app/quick/{plan|run}`, `/app/threads`, `/app/inbox/{id}`, `/app/records/{resource}`, `/app/options/{resource}`, `/app/documents/totals`, `/app/search`, `/app/reports/{id}`, `/app/settings`, `/app/team`, `/app/api-keys`. Localized via `?locale=` or `Accept-Language`.
+
+</details>
+
+---
+
+## Deploying to Cloudflare
+
+```bash
+npx cf auth login
+export CLOUDFLARE_ACCOUNT_ID="<your-cloudflare-account-id>"
+pnpm run deploy
+```
+
+> **Note:** Update `domains` in `apps/web/cloudflare.config.ts` to your own domain (or remove `domains` to serve on `*.workers.dev`), and set `APP_URL` to your public origin.
+
+The control database, R2 bucket, and tenant D1 slots are created automatically on first deploy.
+
+<details>
+<summary><strong>Deployment secrets, email routing &amp; preview environments</strong></summary>
+
+<br />
+
+* `ANTHROPIC_API_KEY` — enables Batzi.
+* `CLOUDFLARE_D1_TOKEN` — enables HTTP fallback for creating/querying tenant databases if the D1 slot pool fills up.
+* `DEMO_LOGIN_EMAIL` / `DEMO_LOGIN_PASSWORD` — enables the one-click demo account on `/login`.
+* `EMAIL_DOMAIN` — enable Cloudflare Email Routing catch-all to the Worker for inbound bills/instructions. Sender instructions are only followed when the sender is a company member and passes DMARC (or DKIM + SPF).
+* `EMAIL_FROM` + `EMAIL` (`send_email` binding) — enables sending documents via Cloudflare Email Service.
+* `IMPORT_SOURCE_URL` — pre-fills the source API origin on *Settings → Move in* (to test locally, point at `http://127.0.0.1:5173/api/compat` with a read-only API key from another local company).
+* **Previews:** `pnpm deploy:preview <name>` deploys an isolated preview environment. Set `PREVIEW_CONTROL_DB_ID`, `PREVIEW_TENANT_DB_001_ID`, and `PREVIEW_TENANT_DB_002_ID` to the D1 database IDs created with `cf d1 create`.
+
+</details>
+
+---
+
+<details>
+<summary><strong>Project layout &amp; adding an entity</strong></summary>
+
+<br />
 
 ```
 apps/
@@ -274,29 +399,38 @@ apps/
   apple/                  project.yml (XcodeGen) · Batzio/ SwiftUI screens · BatzioKit/ Swift package
   android/                Gradle project · app/ (Compose, Navigation 3)
   windows/                Batzio.sln · Batzio.Core/ (+ tests) · Batzio.App/ (WinUI 3)
+docs/                     README assets
 packages/
   core/                   pure Swiss logic: money, format, calc/, swiss/, quick/parse, permissions
   i18n/                   catalog (EN/DE/FR/IT), glossary, runtime, React bindings, native generator
   tokens/                 tokens.json, icons.json, fonts; generators for CSS, Swift, Kotlin, XAML and app icons
   server/                 data layer, auth, CRUD engine, domain services, resources/, api/, mcp/, agent/,
-                          compat/ (compatibility API), importer (moving in), reports, admin, PDF, XLSX,
-                          audit, history (undo), duplicates, idempotency · tests/ (Vitest, in-memory D1)
-  local/                  the engine as one script for the apps' on-device mode · bundle/ (generated) · tests/
-.github/workflows/ci.yml  builds and tests every app
+                          compat/, importer, reports, admin, PDF, XLSX, audit, history, duplicates · tests/
+  local/                  bundled engine for on-device mode · bundle/ (generated) · tests/
+.github/workflows/ci.yml  builds and tests web, API, Apple, Android, and Windows
 ```
 
-## Adding an entity
+### Adding an entity
 
-1. Add the table to a new migration in `packages/server/src/db/migrations/tenant.ts`.
+1. Add the table in a new migration in `packages/server/src/db/migrations/tenant.ts`.
 2. Describe it with `defineResource` in `packages/server/src/resources/defs/` and register it in `packages/server/src/resources/registry.ts`.
-3. Run `pnpm test` — the schema test checks every field against the table.
+3. Run `pnpm gen && pnpm test` — the schema test checks every field against the table.
 
-The list, form, detail screen (web and every native app), REST endpoints, OpenAPI schema, MCP access, XLSX export and audit trail follow automatically.
+Lists, forms, detail screens (web + native apps), REST endpoints, OpenAPI schema, MCP access, XLSX export, and audit trail follow automatically.
 
-## Not yet included
+</details>
 
-Sending documents by email from the app's own screens (the compatibility API's `send` endpoints already work with Email Service) and email replies from Batzi, changes made while offline (the web app is read-only without a connection), eBill, two-factor authentication, plural forms in translations, translated report PDFs (document PDFs follow the customer's language), Swiss salary certificate (Lohnausweis) and ELM transmission, direct ESTV submission, foreign-currency revaluation, and a scheduled trigger for recurring billing and dunning (both are available as one-click actions and API/MCP operations). In the native apps: Batzi and moving in on this device (both need the network), syncing an on-device company to a server, push notifications, home-screen widgets and the A4 sheet editor (documents are edited as forms with live totals and previewed as the real PDF).
+<details>
+<summary><strong>Not yet included / current limitations</strong></summary>
+
+<br />
+
+Sending documents by email directly from the app UI (the compatibility API's `send` endpoints already work with Email Service) and email replies from Batzi, offline writes in the web app (read-only when offline), eBill, two-factor authentication, plural forms in translations, translated report PDFs (document PDFs follow the customer's language), Swiss salary certificate (*Lohnausweis*) and ELM transmission, direct ESTV submission, foreign-currency revaluation, and scheduled triggers for recurring billing and dunning (both are available as one-click actions and API/MCP operations). In the native apps: Batzi and moving in while in on-device mode, syncing an on-device company to a server, push notifications, home-screen widgets, and the A4 sheet editor (documents use forms with live totals and real PDF previews).
+
+</details>
+
+---
 
 ## License
 
-Batzio is free software under the [GNU Affero General Public License, version 3](LICENSE) (SPDX: `AGPL-3.0-only`). You may use, study, change and share it, including running it on your own server. If you change it and let other people use your version over a network, the licence asks you to offer them its source code too.
+Batzio is free software under the [GNU Affero General Public License, version 3](LICENSE) (SPDX: `AGPL-3.0-only`). You may use, study, change, and share it, including running it on your own server. If you modify it and let others use your version over a network, the license requires you to offer them the corresponding source code.
